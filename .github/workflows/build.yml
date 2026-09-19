@@ -1,11 +1,11 @@
 # SPDX-License-Identifier: MIT
 
-name: "NocFree & — JIS / Keymap Editor / ZMK Studio"
-run-name: "JIS / Keymap Editor / ZMK Studio — ${{ github.ref_name }}"
+name: "NocFree & — JIS / USB Dongle / ZMK Studio"
+run-name: "JIS / USB Dongle / ZMK Studio — ${{ github.ref_name }}"
 
 on:
   push:
-    branches: [main]
+    branches: [main, jis-studio, dongle]
   pull_request:
   workflow_dispatch:
 
@@ -21,17 +21,14 @@ jobs:
       - name: Run repository tests
         run: ./tests/run.sh
 
-  # Pinned to the same ZMK commit as config/west.yml, so the build harness and
-  # the firmware it builds always move together.
+  # Keep the build harness pinned to the same ZMK revision as config/west.yml.
   firmware:
     name: Firmware
     needs: validate
     uses: zmkfirmware/zmk/.github/workflows/build-user-config.yml@6e2ef41e022d555b10f116e395832913f71717b3
 
-  # The firmware job above produces the user-facing artifacts but cannot run
-  # tests against its build trees. Build both halves again here and run the
-  # whole suite -- including the flash-bounds, role and linkage checks in
-  # tests/test_artifacts.py, which are skipped without a build.
+  # Rebuild the three normal-role images so tests can inspect the resolved
+  # Kconfig, devicetree, map files and UF2 boundaries.
   artifacts:
     name: Verify built artifacts
     needs: validate
@@ -40,9 +37,8 @@ jobs:
       image: zmkfirmware/zmk-build-arm:stable
     steps:
       - uses: actions/checkout@v4
-      - name: Build both halves from the pinned manifest
+      - name: Build left, right and dongle from the pinned manifest
         run: |
-          # Some ZMK images set this, others ship the SDK without exporting it.
           if [ -z "${ZEPHYR_SDK_INSTALL_DIR:-}" ]; then
             sdk=$(ls -d /opt/zephyr-sdk-* 2>/dev/null | head -1)
             if [ -n "${sdk}" ]; then
@@ -50,17 +46,40 @@ jobs:
               export ZEPHYR_TOOLCHAIN_VARIANT=zephyr
             fi
           fi
+
           mkdir -p /tmp/ws/config
           cp -R config/. /tmp/ws/config/
           cd /tmp/ws
           west init -l config
           west update --fetch-opt=--filter=tree:0
           west zephyr-export
-          for role in left right; do
-            west build -s zmk/app -d "/tmp/ws/build/${role}" \
-              -b "nocfree_and_${role}/nrf52833/zmk" \
-              -- -DZMK_CONFIG=/tmp/ws/config -DZMK_EXTRA_MODULES="${GITHUB_WORKSPACE}"
-          done
+
+          west build -s zmk/app -d /tmp/ws/build/left \
+            -b nocfree_and_left/nrf52833/zmk -- \
+            -DZMK_CONFIG=/tmp/ws/config \
+            -DZMK_EXTRA_MODULES="${GITHUB_WORKSPACE}" \
+            -DCONFIG_ZMK_SPLIT=y \
+            -DCONFIG_ZMK_SPLIT_ROLE_CENTRAL=n \
+            -DCONFIG_ZMK_USB=n \
+            -DCONFIG_USB_DEVICE_STACK=y \
+            -DCONFIG_USB_DEVICE_INITIALIZE_AT_BOOT=y \
+            -DCONFIG_ZMK_SPLIT_BLE_PERIPHERAL_POSITION_QUEUE_SIZE=32
+
+          west build -s zmk/app -d /tmp/ws/build/right \
+            -b nocfree_and_right/nrf52833/zmk -- \
+            -DZMK_CONFIG=/tmp/ws/config \
+            -DZMK_EXTRA_MODULES="${GITHUB_WORKSPACE}" \
+            -DCONFIG_ZMK_SPLIT=y \
+            -DCONFIG_ZMK_SPLIT_ROLE_CENTRAL=n
+
+          west build -s zmk/app -d /tmp/ws/build/dongle \
+            -b xiao_ble//zmk -S studio-rpc-usb-uart -- \
+            -DSHIELD=nocfree_and_dongle \
+            -DZMK_CONFIG=/tmp/ws/config \
+            -DZMK_EXTRA_MODULES="${GITHUB_WORKSPACE}" \
+            -DCONFIG_ZMK_STUDIO=y \
+            -DCONFIG_ZMK_STUDIO_LOCKING=n
+
       - name: Run the full suite against the build
         run: |
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
