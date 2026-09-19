@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: MIT
-"""Inspect built firmware. Skipped unless a build directory is available.
+"""Inspect built firmware for the two NocFree peripherals and USB dongle.
 
-Point NOCFREE_BUILD_DIR at a directory containing `left/` and `right/` build
-trees, or accept the default used by scripts/build-local.sh.
+Point NOCFREE_BUILD_DIR at a directory containing `left/`, `right/`, and
+`dongle/` build trees, or accept the default used by scripts/build-local.sh.
 """
 
 from __future__ import annotations
@@ -35,7 +35,7 @@ def role_dir(role: str) -> Path:
 
 
 def available() -> bool:
-    return all((role_dir(role) / ".config").is_file() for role in ("left", "right"))
+    return all((role_dir(role) / ".config").is_file() for role in ("left", "right", "dongle"))
 
 
 def kconfig(role: str) -> dict[str, str]:
@@ -67,12 +67,13 @@ def uf2_blocks(path: Path):
         }
 
 
-@unittest.skipUnless(available(), f"no build output under {BUILD}")
+@unittest.skipUnless(available(), f"no complete dongle build output under {BUILD}")
 class ArtifactTest(unittest.TestCase):
-    ROLES = ("left", "right")
+    HALVES = ("left", "right")
+    ROLES = ("left", "right", "dongle")
 
-    def test_scanner_is_compiled_in(self):
-        for role in self.ROLES:
+    def test_scanner_is_compiled_into_both_halves(self):
+        for role in self.HALVES:
             config = kconfig(role)
             with self.subTest(role):
                 self.assertEqual(config.get("CONFIG_NOCFREE_KSCAN_PCA9555"), "y")
@@ -80,58 +81,61 @@ class ArtifactTest(unittest.TestCase):
                 self.assertEqual(config.get("CONFIG_I2C"), "y")
 
     def test_split_roles_are_correct(self):
-        left, right = kconfig("left"), kconfig("right")
-        self.assertEqual(left.get("CONFIG_ZMK_SPLIT"), "y")
-        self.assertEqual(right.get("CONFIG_ZMK_SPLIT"), "y")
-        self.assertEqual(left.get("CONFIG_ZMK_SPLIT_ROLE_CENTRAL"), "y")
+        left, right, dongle = (kconfig(r) for r in self.ROLES)
+        for config in (left, right, dongle):
+            self.assertEqual(config.get("CONFIG_ZMK_SPLIT"), "y")
+        self.assertNotEqual(left.get("CONFIG_ZMK_SPLIT_ROLE_CENTRAL"), "y")
         self.assertNotEqual(right.get("CONFIG_ZMK_SPLIT_ROLE_CENTRAL"), "y")
+        self.assertEqual(dongle.get("CONFIG_ZMK_SPLIT_ROLE_CENTRAL"), "y")
+        self.assertEqual(dongle.get("CONFIG_ZMK_SPLIT_BLE_CENTRAL_PERIPHERALS"), "2")
 
-    def test_only_the_central_has_usb_hid(self):
-        self.assertEqual(kconfig("left").get("CONFIG_ZMK_USB"), "y")
+    def test_only_the_dongle_has_usb_hid(self):
+        self.assertNotEqual(kconfig("left").get("CONFIG_ZMK_USB"), "y")
         self.assertNotEqual(kconfig("right").get("CONFIG_ZMK_USB"), "y")
+        self.assertEqual(kconfig("dongle").get("CONFIG_ZMK_USB"), "y")
 
     def test_both_halves_have_bluetooth_and_cdc_recovery(self):
-        for role in self.ROLES:
+        for role in self.HALVES:
             config = kconfig(role)
             with self.subTest(role):
                 self.assertEqual(config.get("CONFIG_ZMK_BLE"), "y")
                 self.assertEqual(config.get("CONFIG_USB_CDC_ACM"), "y")
                 self.assertEqual(config.get("CONFIG_NOCFREE_RECOVERY_CDC_1200_TOUCH"), "y")
                 self.assertEqual(config.get("CONFIG_RETENTION_BOOT_MODE"), "y")
+                self.assertEqual(config.get("CONFIG_USB_DEVICE_STACK"), "y")
+                self.assertEqual(config.get("CONFIG_USB_DEVICE_INITIALIZE_AT_BOOT"), "y")
 
-    def test_resolved_config_keeps_the_conservative_choices(self):
-        """The safety-load-bearing symbols, as Kconfig actually resolved them:
-        the internal RC 32 kHz source (an absent crystal stops BLE) and the
-        line that enumerates the peripheral's USB recovery interface."""
-        for role in self.ROLES:
+    def test_halves_keep_the_conservative_lf_clock(self):
+        for role in self.HALVES:
             config = kconfig(role)
             with self.subTest(role):
                 self.assertEqual(config.get("CONFIG_CLOCK_CONTROL_NRF_K32SRC_RC"), "y")
                 self.assertNotEqual(config.get("CONFIG_CLOCK_CONTROL_NRF_K32SRC_XTAL"), "y")
-        right = kconfig("right")
-        self.assertEqual(right.get("CONFIG_USB_DEVICE_STACK"), "y")
-        self.assertEqual(right.get("CONFIG_USB_DEVICE_INITIALIZE_AT_BOOT"), "y")
 
-    def test_split_link_resolved_to_the_robust_phy_and_deep_tx_pipeline(self):
-        """CONFIG_ZMK_BLE_EXPERIMENTAL_CONN only requests the 1M PHY; whether
-        the controller's 2M PHY actually resolved away is decided by Kconfig
-        default ordering. Assert the outcome in the compiled config so a ZMK
-        bump that re-enables 2M, or a silently ignored buffer setting, fails
-        here instead of on the desk."""
+    def test_split_link_uses_1m_phy_and_deep_tx_pipeline(self):
         for role in self.ROLES:
             config = kconfig(role)
             with self.subTest(role):
+                self.assertEqual(config.get("CONFIG_ZMK_BLE"), "y")
                 self.assertEqual(config.get("CONFIG_ZMK_BLE_EXPERIMENTAL_CONN"), "y")
                 self.assertNotEqual(config.get("CONFIG_BT_CTLR_PHY_2M"), "y")
                 self.assertEqual(config.get("CONFIG_BT_BUF_ACL_TX_COUNT"), "8")
                 self.assertEqual(config.get("CONFIG_BT_L2CAP_TX_BUF_COUNT"), "8")
                 self.assertEqual(config.get("CONFIG_BT_CONN_TX_MAX"), "8")
         self.assertEqual(
-            kconfig("left").get("CONFIG_ZMK_SPLIT_BLE_CENTRAL_POSITION_QUEUE_SIZE"), "16"
+            kconfig("left").get("CONFIG_ZMK_SPLIT_BLE_PERIPHERAL_POSITION_QUEUE_SIZE"), "32"
         )
         self.assertEqual(
             kconfig("right").get("CONFIG_ZMK_SPLIT_BLE_PERIPHERAL_POSITION_QUEUE_SIZE"), "32"
         )
+        self.assertEqual(
+            kconfig("dongle").get("CONFIG_ZMK_SPLIT_BLE_CENTRAL_POSITION_QUEUE_SIZE"), "32"
+        )
+
+    def test_studio_exists_only_on_the_dongle(self):
+        self.assertNotEqual(kconfig("left").get("CONFIG_ZMK_STUDIO"), "y")
+        self.assertNotEqual(kconfig("right").get("CONFIG_ZMK_STUDIO"), "y")
+        self.assertEqual(kconfig("dongle").get("CONFIG_ZMK_STUDIO"), "y")
 
     def test_excluded_features_are_absent(self):
         for role in self.ROLES:
@@ -140,45 +144,41 @@ class ArtifactTest(unittest.TestCase):
                 "CONFIG_ZMK_BACKLIGHT",
                 "CONFIG_ZMK_RGB_UNDERGLOW",
                 "CONFIG_ZMK_BATTERY_REPORTING",
-                "CONFIG_ZMK_STUDIO",
             ):
                 with self.subTest(f"{role} {symbol}"):
                     self.assertNotEqual(config.get(symbol), "y")
 
-    def test_application_is_linked_into_the_code_partition(self):
-        for role in self.ROLES:
+    def test_halves_link_into_the_preserved_code_partition(self):
+        for role in self.HALVES:
             config = kconfig(role)
             with self.subTest(role):
                 self.assertEqual(config.get("CONFIG_USE_DT_CODE_PARTITION"), "y")
                 self.assertEqual(int(config["CONFIG_FLASH_LOAD_OFFSET"], 0), CODE_START)
                 self.assertEqual(int(config["CONFIG_FLASH_LOAD_SIZE"], 0), CODE_SIZE)
 
-    def test_uf2_writes_only_inside_the_code_partition(self):
-        for role in self.ROLES:
+    def test_half_uf2_writes_only_inside_the_code_partition(self):
+        for role in self.HALVES:
             uf2 = role_dir(role) / "zmk.uf2"
             with self.subTest(role):
                 self.assertTrue(uf2.is_file(), f"missing {uf2}")
                 blocks = list(uf2_blocks(uf2))
                 self.assertGreater(len(blocks), 0)
-
                 for block in blocks:
                     self.assertEqual(block["start0"], UF2_MAGIC_START0)
                     self.assertEqual(block["start1"], UF2_MAGIC_START1)
                     self.assertEqual(block["end"], UF2_MAGIC_END)
                     self.assertGreaterEqual(block["address"], CODE_START)
                     self.assertLessEqual(block["address"] + block["payload"], CODE_END)
-
                 lowest = min(b["address"] for b in blocks)
                 highest = max(b["address"] + b["payload"] for b in blocks)
                 self.assertEqual(lowest, CODE_START)
                 self.assertLessEqual(highest, CODE_END)
 
-    def test_uf2_never_targets_the_bootloader_or_factory_data(self):
+    def test_half_uf2_never_targets_bootloader_or_factory_data(self):
         fs_start, fs_end = spec.FACTORY_FILESYSTEM
         boot_start = spec.PARTITIONS["boot_partition"][0]
         storage_start = spec.PARTITIONS["storage_partition"][0]
-
-        for role in self.ROLES:
+        for role in self.HALVES:
             for block in uf2_blocks(role_dir(role) / "zmk.uf2"):
                 first, last = block["address"], block["address"] + block["payload"]
                 with self.subTest(f"{role} 0x{first:x}"):
@@ -187,7 +187,6 @@ class ArtifactTest(unittest.TestCase):
                     self.assertLess(first, boot_start)
 
     def compiled_key_inputs(self, role: str) -> list[tuple[str, int]]:
-        """The (expander, bit) list as it appears in the compiled devicetree."""
         text = (role_dir(role) / "zephyr.dts").read_text()
         body = re.search(r"key-inputs = (.*?);$", text, re.M)
         assert body, f"no key-inputs in the {role} devicetree"
@@ -208,13 +207,15 @@ class ArtifactTest(unittest.TestCase):
                     with self.subTest(f"{role} {label} bit {bit}"):
                         self.assertNotIn((label, bit), declared)
 
-    def test_only_the_peripheral_offsets_its_columns(self):
+    def test_only_the_right_half_offsets_its_columns(self):
         left = (role_dir("left") / "zephyr.dts").read_text()
         right = (role_dir("right") / "zephyr.dts").read_text()
+        dongle = (role_dir("dongle") / "zephyr.dts").read_text()
         offset = re.search(r"col-offset = <\s*(0x[0-9a-f]+|\d+)\s*>", right)
         self.assertIsNotNone(offset)
         self.assertEqual(int(offset.group(1), 0), spec.RIGHT_COL_OFFSET)
         self.assertNotIn("col-offset", left)
+        self.assertNotIn("col-offset", dongle)
 
     def test_compiled_transform_covers_every_position(self):
         for role in self.ROLES:
@@ -225,18 +226,16 @@ class ArtifactTest(unittest.TestCase):
                 values = [int(v, 0) for v in re.findall(r"0x[0-9a-f]+|\b\d+\b", body.group(1))]
                 self.assertEqual(sorted(values), sorted(spec.TRANSFORM))
 
-    def test_scanner_and_recovery_code_are_linked(self):
-        """Configured is not the same as present in the image."""
-        for role in self.ROLES:
+    def test_scanner_and_recovery_code_are_linked_into_halves(self):
+        for role in self.HALVES:
             mapfile = (role_dir(role) / "zmk.map").read_text(errors="replace")
             for obj in ("kscan_pca9555.c.obj", "cdc_1200_touch.c.obj"):
                 with self.subTest(f"{role} {obj}"):
                     self.assertIn(obj, mapfile)
 
-    def test_uf2_targets_the_nrf52833_family(self):
-        """A wrong family ID would let the bootloader reject or misplace it."""
+    def test_half_uf2_targets_the_nrf52833_family(self):
         NRF52833_FAMILY = 0x621E937A
-        for role in self.ROLES:
+        for role in self.HALVES:
             for block in uf2_blocks(role_dir(role) / "zmk.uf2"):
                 with self.subTest(role):
                     self.assertTrue(block["flags"] & UF2_FLAG_FAMILY_ID)
@@ -244,19 +243,22 @@ class ArtifactTest(unittest.TestCase):
                 break
 
     def test_expanders_are_at_the_published_addresses(self):
-        for role in self.ROLES:
+        for role in self.HALVES:
             text = (role_dir(role) / "zephyr.dts").read_text()
             found = sorted(int(a, 16) for a in re.findall(r"keys@(\w+) \{", text))
             with self.subTest(role):
                 self.assertEqual(found, sorted(spec.EXPANDER_ADDRESSES.values()))
 
-    def test_image_leaves_headroom_in_the_slot(self):
-        for role in self.ROLES:
+    def test_half_images_leave_headroom_in_the_slot(self):
+        for role in self.HALVES:
             size = (role_dir(role) / "zmk.bin").stat().st_size
             with self.subTest(role):
                 self.assertLess(size, CODE_SIZE)
                 print(f"\n  {role}: {size} bytes of {CODE_SIZE} "
                       f"({100 * size / CODE_SIZE:.1f}%)")
+
+    def test_dongle_outputs_uf2(self):
+        self.assertTrue((role_dir("dongle") / "zmk.uf2").is_file())
 
 
 if __name__ == "__main__":

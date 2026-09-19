@@ -1,9 +1,42 @@
 # SPDX-License-Identifier: MIT
 
 include:
+  # NocFree halves become BLE split peripherals. The existing board definitions,
+  # PCA9555 scanner and debounce configuration remain unchanged.
   - board: nocfree_and_left/nrf52833/zmk
-    artifact-name: nocfree_and_left
-    snippet: studio-rpc-usb-uart
-    cmake-args: -DCONFIG_ZMK_STUDIO=y -DCONFIG_ZMK_STUDIO_LOCKING=n
+    artifact-name: nocfree_and_left_peripheral
+    cmake-args: >-
+      -DCONFIG_ZMK_SPLIT=y
+      -DCONFIG_ZMK_SPLIT_ROLE_CENTRAL=n
+      -DCONFIG_ZMK_USB=n
+      -DCONFIG_USB_DEVICE_STACK=y
+      -DCONFIG_USB_DEVICE_INITIALIZE_AT_BOOT=y
+      -DCONFIG_ZMK_SPLIT_BLE_PERIPHERAL_POSITION_QUEUE_SIZE=32
+
   - board: nocfree_and_right/nrf52833/zmk
-    artifact-name: nocfree_and_right
+    artifact-name: nocfree_and_right_peripheral
+    cmake-args: >-
+      -DCONFIG_ZMK_SPLIT=y
+      -DCONFIG_ZMK_SPLIT_ROLE_CENTRAL=n
+
+  # USB-powered dongle is the only split central and owns the keymap/layers.
+  - board: xiao_ble//zmk
+    shield: nocfree_and_dongle
+    artifact-name: nocfree_and_dongle
+    snippet: studio-rpc-usb-uart
+    cmake-args: >-
+      -DCONFIG_ZMK_STUDIO=y
+      -DCONFIG_ZMK_STUDIO_LOCKING=n
+
+  # Pairing data must be cleared on all three devices before switching topology.
+  - board: nocfree_and_left/nrf52833/zmk
+    shield: settings_reset
+    artifact-name: nocfree_and_left_settings_reset
+
+  - board: nocfree_and_right/nrf52833/zmk
+    shield: settings_reset
+    artifact-name: nocfree_and_right_settings_reset
+
+  - board: xiao_ble//zmk
+    shield: settings_reset
+    artifact-name: nocfree_and_dongle_settings_reset

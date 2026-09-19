@@ -1,0 +1,5 @@
+Static validation passed:
+- matrix transform: 85 unique positions
+- physical layout: 85 keys
+- keymap: 6 layers x 85 bindings
+- build topology: XIAO central + peripheral overrides
