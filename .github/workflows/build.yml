@@ -84,3 +84,4 @@ jobs:
         run: |
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
           NOCFREE_BUILD_DIR=/tmp/ws/build ./tests/run.sh
+# Trigger GitHub Actions after enabling workflows
