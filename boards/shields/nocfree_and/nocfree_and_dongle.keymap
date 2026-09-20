@@ -13,38 +13,45 @@
 / {
     macros {
         /*
-         * Select the requested host profile before preferring BLE output.
+         * Prefer BLE output before selecting the requested host profile.
+         * BT_SEL can interrupt the remainder of a macro while the profile
+         * connection state changes, so it must be the final action.
          * Keeping one macro per profile avoids depending on parameterized
          * macro support and makes every action visible to ZMK Studio.
          */
         ble_profile_1: ble_profile_1 {
             compatible = "zmk,behavior-macro";
             #binding-cells = <0>;
-            bindings = <&bt BT_SEL 0>, <&out OUT_BLE>;
+            wait-ms = <100>;
+            bindings = <&out OUT_BLE>, <&bt BT_SEL 0>;
         };
 
         ble_profile_2: ble_profile_2 {
             compatible = "zmk,behavior-macro";
             #binding-cells = <0>;
-            bindings = <&bt BT_SEL 1>, <&out OUT_BLE>;
+            wait-ms = <100>;
+            bindings = <&out OUT_BLE>, <&bt BT_SEL 1>;
         };
 
         ble_profile_3: ble_profile_3 {
             compatible = "zmk,behavior-macro";
             #binding-cells = <0>;
-            bindings = <&bt BT_SEL 2>, <&out OUT_BLE>;
+            wait-ms = <100>;
+            bindings = <&out OUT_BLE>, <&bt BT_SEL 2>;
         };
 
         ble_profile_4: ble_profile_4 {
             compatible = "zmk,behavior-macro";
             #binding-cells = <0>;
-            bindings = <&bt BT_SEL 3>, <&out OUT_BLE>;
+            wait-ms = <100>;
+            bindings = <&out OUT_BLE>, <&bt BT_SEL 3>;
         };
 
         ble_profile_5: ble_profile_5 {
             compatible = "zmk,behavior-macro";
             #binding-cells = <0>;
-            bindings = <&bt BT_SEL 4>, <&out OUT_BLE>;
+            wait-ms = <100>;
+            bindings = <&out OUT_BLE>, <&bt BT_SEL 4>;
         };
     };
 

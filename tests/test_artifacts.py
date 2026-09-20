@@ -33,7 +33,7 @@ KEYMAP = ROOT / "boards" / "shields" / "nocfree_and" / "nocfree_and_dongle.keyma
 
 
 class SourceConfigurationTest(unittest.TestCase):
-    def test_ble_profile_keys_select_profile_then_ble_output(self):
+    def test_ble_profile_keys_select_ble_output_then_profile(self):
         text = KEYMAP.read_text()
         for profile in range(5):
             with self.subTest(profile=profile):
@@ -45,8 +45,9 @@ class SourceConfigurationTest(unittest.TestCase):
                 self.assertIsNotNone(node)
                 self.assertRegex(
                     node.group(1),
-                    rf"bindings\s*=\s*<&bt BT_SEL {profile}>,\s*<&out OUT_BLE>;",
+                    rf"bindings\s*=\s*<&out OUT_BLE>,\s*<&bt BT_SEL {profile}>;",
                 )
+                self.assertIn("wait-ms = <100>;", node.group(1))
 
         self.assertIn(
             "&trans &ble_profile_1 &ble_profile_2 &ble_profile_3 "
@@ -254,6 +255,9 @@ class ArtifactTest(unittest.TestCase):
     def test_compiled_transform_covers_every_position(self):
         for role in self.ROLES:
             text = (role_dir(role) / "zephyr.dts").read_text()
+            # Match only an exact `map` property. Studio/macros add properties
+            # such as `bindings-map`; an unanchored search would mistake those
+            # for the keyboard matrix transform.
             body = re.search(r"^\s*map\s*=\s*<(.*?)>;", text, re.S | re.M)
             with self.subTest(role):
                 self.assertIsNotNone(body)

@@ -1,4 +1,11 @@
-# v0.2 patch contents
+# v0.2.1 patch contents
+
+## Changes from v0.2
+
+- Reordered each BLE profile macro to select BLE output before `BT_SEL`.
+- Added a 100 ms inter-action wait; `BT_SEL` remains the final macro action.
+- This fixes the field-observed case where profile selection succeeded but
+  subsequent output selection did not run.
 
 ## Changes from v0.1
 
