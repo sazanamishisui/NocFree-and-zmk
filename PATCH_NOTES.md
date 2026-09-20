@@ -1,11 +1,18 @@
-# v0.2.1 patch contents
+# v0.2.2 patch contents
+
+## Changes from v0.2.1
+
+- Changed each BLE profile macro to explicit press-only activation.
+- `OUT_BLE` still runs first, followed by a 100 ms wait and `BT_SEL`.
+- This addresses the field-observed v0.2.1 failure where the profile connected
+  but the dongle continued sending output to USB.
 
 ## Changes from v0.2
 
 - Reordered each BLE profile macro to select BLE output before `BT_SEL`.
 - Added a 100 ms inter-action wait; `BT_SEL` remains the final macro action.
-- This fixes the field-observed case where profile selection succeeded but
-  subsequent output selection did not run.
+- v0.2.1 did not resolve the field-observed USB routing problem; v0.2.2 adds
+  explicit press-only activation for the two system behaviors.
 
 ## Changes from v0.1
 

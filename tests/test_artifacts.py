@@ -33,7 +33,7 @@ KEYMAP = ROOT / "boards" / "shields" / "nocfree_and" / "nocfree_and_dongle.keyma
 
 
 class SourceConfigurationTest(unittest.TestCase):
-    def test_ble_profile_keys_select_ble_output_then_profile(self):
+    def test_ble_profile_keys_press_ble_output_then_profile(self):
         text = KEYMAP.read_text()
         for profile in range(5):
             with self.subTest(profile=profile):
@@ -45,7 +45,8 @@ class SourceConfigurationTest(unittest.TestCase):
                 self.assertIsNotNone(node)
                 self.assertRegex(
                     node.group(1),
-                    rf"bindings\s*=\s*<&out OUT_BLE>,\s*<&bt BT_SEL {profile}>;",
+                    rf"bindings\s*=\s*<&macro_press>,\s*<&out OUT_BLE>,\s*"
+                    rf"<&bt BT_SEL {profile}>;",
                 )
                 self.assertIn("wait-ms = <100>;", node.group(1))
 

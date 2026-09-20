@@ -1,4 +1,4 @@
-# NocFree & JIS — ZMK USB Dongle prototype v0.2.1
+# NocFree & JIS — ZMK USB Dongle prototype v0.2.2
 
 This patch is intended to be applied on top of:
 
@@ -53,10 +53,11 @@ routing so a single chord switches the XIAO dongle to the requested BLE host:
 - `Fn+0`: clear the bond for the currently selected Bluetooth profile
 
 The macro changes the output route to BLE first, waits 100 ms, and then selects
-the requested profile. Selecting a Bluetooth profile can interrupt subsequent
-macro actions while its connection state changes, so profile selection is kept
-as the final action. ZMK persists the selected output route in settings, so
-`Fn+U` remains the explicit recovery path back to USB output.
+the requested profile. Both system behaviors are invoked in explicit
+press-only mode; this prevents the macro's default tap processing from adding
+release events between the two state changes. Profile selection is kept as the
+final action. ZMK persists the selected output route in settings, so `Fn+U`
+remains the explicit recovery path back to USB output.
 
 ## Important topology change
 
