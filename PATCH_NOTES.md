@@ -1,4 +1,11 @@
-# v0.1 patch contents
+# v0.2 patch contents
+
+## Changes from v0.1
+
+- Added one-step BLE host switching macros on `Fn+1` through `Fn+5`.
+- Kept `Fn+U` as the explicit USB output selector.
+- Marked Nav, Numpad, Work, and Reserved as ZMK Studio reserve layers.
+- Added source validation for the output macros and reserve-layer metadata.
 
 Apply these paths over `electricdoc187/NocFree-and-zmk` branch `jis-studio`.
 All listed files are complete files, not fragments.

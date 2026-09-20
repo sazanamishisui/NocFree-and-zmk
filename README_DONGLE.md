@@ -1,4 +1,4 @@
-# NocFree & JIS — ZMK USB Dongle prototype v0.1
+# NocFree & JIS — ZMK USB Dongle prototype v0.2
 
 This patch is intended to be applied on top of:
 
@@ -42,6 +42,20 @@ edit them without increasing the nRF52833 workload:
 The last four are deliberately transparent in v0.1. This keeps first-boot
 behavior identical to the existing two-layer firmware; they can be populated
 later in ZMK Studio.
+
+## Host output switching in v0.2
+
+The Fn number-row bindings now combine host profile selection and output
+routing so a single chord switches the XIAO dongle to the requested BLE host:
+
+- `Fn+1` through `Fn+5`: select Bluetooth profile 1 through 5, then prefer BLE
+- `Fn+U`: prefer USB output to the PC or KVM connected to the XIAO
+- `Fn+0`: clear the bond for the currently selected Bluetooth profile
+
+The BLE profile is selected before changing the output route, avoiding a brief
+connection attempt to the previously active profile. ZMK persists the selected
+output route in settings, so `Fn+U` remains the explicit recovery path back to
+USB output.
 
 ## Important topology change
 

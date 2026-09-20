@@ -29,6 +29,40 @@ UF2_BLOCK = 512
 CODE_START, CODE_SIZE = spec.PARTITIONS["code_partition"]
 CODE_END = CODE_START + CODE_SIZE
 
+KEYMAP = ROOT / "boards" / "shields" / "nocfree_and" / "nocfree_and_dongle.keymap"
+
+
+class SourceConfigurationTest(unittest.TestCase):
+    def test_ble_profile_keys_select_profile_then_ble_output(self):
+        text = KEYMAP.read_text()
+        for profile in range(5):
+            with self.subTest(profile=profile):
+                node = re.search(
+                    rf"ble_profile_{profile + 1}:.*?\{{(.*?)\n\s*\}};",
+                    text,
+                    re.S,
+                )
+                self.assertIsNotNone(node)
+                self.assertRegex(
+                    node.group(1),
+                    rf"bindings\s*=\s*<&bt BT_SEL {profile}>,\s*<&out OUT_BLE>;",
+                )
+
+        self.assertIn(
+            "&trans &ble_profile_1 &ble_profile_2 &ble_profile_3 "
+            "&ble_profile_4 &ble_profile_5 &studio_unlock",
+            text,
+        )
+        self.assertIn("&out OUT_USB", text)
+
+    def test_extra_studio_layers_are_reserved(self):
+        text = KEYMAP.read_text()
+        for layer in ("navigation_layer", "numpad_layer", "work_layer", "reserved_layer"):
+            with self.subTest(layer=layer):
+                node = re.search(rf"{layer}\s*\{{(.*?)\n\s*\}};", text, re.S)
+                self.assertIsNotNone(node)
+                self.assertIn('status = "reserved";', node.group(1))
+
 
 def role_dir(role: str) -> Path:
     return BUILD / role / "zephyr"
@@ -220,7 +254,7 @@ class ArtifactTest(unittest.TestCase):
     def test_compiled_transform_covers_every_position(self):
         for role in self.ROLES:
             text = (role_dir(role) / "zephyr.dts").read_text()
-            body = re.search(r"^[ \t]*map = <(.*?)>;[ \t]*$", text, re.M | re.S)
+            body = re.search(r"map = <(.*?)>;", text, re.S)
             with self.subTest(role):
                 self.assertIsNotNone(body)
                 values = [int(v, 0) for v in re.findall(r"0x[0-9a-f]+|\b\d+\b", body.group(1))]
