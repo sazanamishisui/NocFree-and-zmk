@@ -254,7 +254,7 @@ class ArtifactTest(unittest.TestCase):
     def test_compiled_transform_covers_every_position(self):
         for role in self.ROLES:
             text = (role_dir(role) / "zephyr.dts").read_text()
-            body = re.search(r"map = <(.*?)>;", text, re.S)
+            body = re.search(r"^\s*map\s*=\s*<(.*?)>;", text, re.S | re.M)
             with self.subTest(role):
                 self.assertIsNotNone(body)
                 values = [int(v, 0) for v in re.findall(r"0x[0-9a-f]+|\b\d+\b", body.group(1))]
