@@ -54,3 +54,12 @@ config NOCFREE_RECOVERY_CDC_1200_TOUCH
       half whose key triggered it and, for a split peripheral, needs a working
       split link -- this path only needs USB, so it recovers a half no matter
       what state its radio or pairing is in.
+
+config NOCFREE_PAD_I2C_DIAGNOSTIC
+    bool "Periodically report NocFree Pad PCA9555 registers"
+    default n
+    depends on I2C && LOG
+    help
+      Read the three Pad expanders every two seconds and report their input,
+      polarity and configuration registers over the selected logging backend.
+      This is a temporary read-only fault-isolation feature.

@@ -1,9 +1,13 @@
-# NocFree Pad standalone USB diagnostic
+# NocFree Pad standalone USB and I2C diagnostic
 
 `nocfree_and_pad_usb_diagnostic.uf2` is a temporary fault-isolation image. It
 reads the Pad's three PCA9555 expanders using the same scanner as the normal
 split-peripheral image, but sends key events directly to the PC over USB HID.
 BLE and split operation are disabled in this image.
+
+The v0.6.2 variant also emits a read-only PCA9555 register report over the
+same USB CDC port used for 1200-baud recovery. Open that COM port at 115200
+baud to capture the report.
 
 This answers one narrow question without changing the working keyboard halves
 or the dongle's stored bonds:

@@ -39,6 +39,9 @@ include:
       -DCONFIG_ZMK_SPLIT=n
       -DCONFIG_ZMK_USB=y
       -DCONFIG_ZMK_BLE=n
+      -DCONFIG_ZMK_USB_LOGGING=y
+      -DCONFIG_NOCFREE_PAD_I2C_DIAGNOSTIC=y
+      -DEXTRA_DTC_OVERLAY_FILE=${GITHUB_WORKSPACE}/boards/nocfree/nocfree_and/pad_usb_diag.overlay
       -DKEYMAP_FILE=${GITHUB_WORKSPACE}/boards/nocfree/nocfree_and/pad_usb_diag.keymap
 
   # USB-powered dongle is the only split central and owns the keymap/layers.

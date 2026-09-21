@@ -41,6 +41,10 @@ PAD_DIAG_KEYMAP = (
     / "nocfree_and"
     / "pad_usb_diag.keymap"
 )
+PAD_DIAG_OVERLAY = (
+    ROOT / "boards" / "nocfree" / "nocfree_and" / "pad_usb_diag.overlay"
+)
+PAD_DIAG_SOURCE = ROOT / "src" / "pad_i2c_diagnostic.c"
 
 
 class SourceConfigurationTest(unittest.TestCase):
@@ -48,6 +52,8 @@ class SourceConfigurationTest(unittest.TestCase):
         self.assertTrue(PAD_DTS.is_file())
         self.assertTrue(PAD_KEYMAP.is_file())
         self.assertTrue(PAD_DIAG_KEYMAP.is_file())
+        self.assertTrue(PAD_DIAG_OVERLAY.is_file())
+        self.assertTrue(PAD_DIAG_SOURCE.is_file())
 
         matrix = BUILD_MATRIX.read_text()
         for artifact in (
@@ -79,6 +85,26 @@ class SourceConfigurationTest(unittest.TestCase):
         self.assertEqual(len(re.findall(r"&\w+", diagnostic_bindings.group(1))), 106)
         self.assertIn("&kp KP_NUMLOCK", diagnostic_bindings.group(1))
         self.assertIn("&kp KP_ENTER", diagnostic_bindings.group(1))
+
+        overlay = PAD_DIAG_OVERLAY.read_text()
+        self.assertIn("zephyr,console = &cdc_acm_uart0", overlay)
+
+        source = PAD_DIAG_SOURCE.read_text()
+        for required in (
+            "PCA_SPEC(pca20)",
+            "PCA_SPEC(pca22)",
+            "PCA_SPEC(pca24)",
+            "PCA9555_INPUT_PORT0",
+            "PCA9555_POLARITY_PORT0",
+            "PCA9555_CONFIGURATION_PORT0",
+            "K_SECONDS(2)",
+        ):
+            with self.subTest(required):
+                self.assertIn(required, source)
+
+        cmake = (ROOT / "CMakeLists.txt").read_text()
+        self.assertIn("CONFIG_NOCFREE_PAD_I2C_DIAGNOSTIC", cmake)
+        self.assertIn("src/pad_i2c_diagnostic.c", cmake)
 
     def test_ble_profile_keys_use_stock_bindings_and_event_router(self):
         text = KEYMAP.read_text()
@@ -186,6 +212,14 @@ class SourceConfigurationTest(unittest.TestCase):
             workflow,
         )
         self.assertIn('-DKEYMAP_FILE="${pad_diag_keymap}"', workflow)
+        self.assertIn("CONFIG_ZMK_USB_LOGGING=y", BUILD_MATRIX.read_text())
+        self.assertIn(
+            "CONFIG_NOCFREE_PAD_I2C_DIAGNOSTIC=y", BUILD_MATRIX.read_text()
+        )
+        self.assertIn("pad_usb_diag.overlay", BUILD_MATRIX.read_text())
+        self.assertIn("CONFIG_ZMK_USB_LOGGING=y", workflow)
+        self.assertIn("CONFIG_NOCFREE_PAD_I2C_DIAGNOSTIC=y", workflow)
+        self.assertIn('-DEXTRA_DTC_OVERLAY_FILE="${pad_diag_overlay}"', workflow)
 
 
 def role_dir(role: str) -> Path:
@@ -477,6 +511,8 @@ class PadUsbDiagnosticArtifactTest(unittest.TestCase):
         self.assertEqual(config.get("CONFIG_USB_CDC_ACM"), "y")
         self.assertEqual(config.get("CONFIG_NOCFREE_RECOVERY_CDC_1200_TOUCH"), "y")
         self.assertEqual(config.get("CONFIG_NOCFREE_KSCAN_PCA9555"), "y")
+        self.assertEqual(config.get("CONFIG_ZMK_USB_LOGGING"), "y")
+        self.assertEqual(config.get("CONFIG_NOCFREE_PAD_I2C_DIAGNOSTIC"), "y")
 
     def test_diagnostic_uf2_stays_inside_the_application_partition(self):
         uf2 = role_dir("pad_usb_diagnostic") / "zmk.uf2"
@@ -494,6 +530,13 @@ class PadUsbDiagnosticArtifactTest(unittest.TestCase):
         )
         self.assertIn("kscan_pca9555.c.obj", mapfile)
         self.assertIn("cdc_1200_touch.c.obj", mapfile)
+        self.assertIn("pad_i2c_diagnostic.c.obj", mapfile)
+
+    def test_diagnostic_uses_the_existing_recovery_cdc_as_console(self):
+        devicetree = (role_dir("pad_usb_diagnostic") / "zephyr.dts").read_text()
+        chosen = re.search(r"chosen \{(.*?)\n\s*\};", devicetree, re.S)
+        self.assertIsNotNone(chosen)
+        self.assertIn("zephyr,console = &cdc_acm_uart0", chosen.group(1))
 
 
 if __name__ == "__main__":

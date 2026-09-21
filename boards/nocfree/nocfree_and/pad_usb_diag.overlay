@@ -1,0 +1,9 @@
+/* SPDX-License-Identifier: MIT */
+
+/* Reuse the board's recovery CDC port as the USB logging console. */
+/ {
+    chosen {
+        zephyr,console = &cdc_acm_uart0;
+        zephyr,shell-uart = &cdc_acm_uart0;
+    };
+};
