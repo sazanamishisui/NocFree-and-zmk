@@ -54,6 +54,9 @@ jobs:
           west update --fetch-opt=--filter=tree:0
           west zephyr-export
 
+          dongle_keymap="${GITHUB_WORKSPACE}/boards/shields/nocfree_and/"
+          dongle_keymap="${dongle_keymap}nocfree_and_dongle.keymap"
+
           west build -s zmk/app -d /tmp/ws/build/left \
             -b nocfree_and_left/nrf52833/zmk -- \
             -DZMK_CONFIG=/tmp/ws/config \
@@ -77,7 +80,7 @@ jobs:
             -DSHIELD=nocfree_and_dongle \
             -DZMK_CONFIG=/tmp/ws/config \
             -DZMK_EXTRA_MODULES="${GITHUB_WORKSPACE}" \
-            -DKEYMAP_FILE="${GITHUB_WORKSPACE}/boards/shields/nocfree_and/nocfree_and_dongle.keymap" \
+            -DKEYMAP_FILE="${dongle_keymap}" \
             -DCONFIG_ZMK_STUDIO=y \
             -DCONFIG_ZMK_STUDIO_LOCKING=n
 
@@ -85,4 +88,3 @@ jobs:
         run: |
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
           NOCFREE_BUILD_DIR=/tmp/ws/build ./tests/run.sh
-# Trigger GitHub Actions after enabling workflows
