@@ -5,7 +5,7 @@ run-name: "JIS / USB Dongle / ZMK Studio — ${{ github.ref_name }}"
 
 on:
   push:
-    branches: [main, jis-studio, dongle]
+    branches: [main, jis-studio, dongle, "v*"]
   pull_request:
   workflow_dispatch:
 
