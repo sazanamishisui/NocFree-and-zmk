@@ -77,6 +77,7 @@ jobs:
             -DSHIELD=nocfree_and_dongle \
             -DZMK_CONFIG=/tmp/ws/config \
             -DZMK_EXTRA_MODULES="${GITHUB_WORKSPACE}" \
+            -DKEYMAP_FILE="${GITHUB_WORKSPACE}/boards/shields/nocfree_and/nocfree_and_dongle.keymap" \
             -DCONFIG_ZMK_STUDIO=y \
             -DCONFIG_ZMK_STUDIO_LOCKING=n
 
