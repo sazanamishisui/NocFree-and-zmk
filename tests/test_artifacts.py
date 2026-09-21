@@ -86,7 +86,16 @@ class SourceConfigurationTest(unittest.TestCase):
             "nocfree_and/nocfree_and_dongle.keymap"
         )
         self.assertIn(expected, BUILD_MATRIX.read_text())
-        self.assertIn(expected.replace("=", '=\"', 1) + '\"', WORKFLOW.read_text())
+        workflow = WORKFLOW.read_text()
+        self.assertIn(
+            'dongle_keymap="${GITHUB_WORKSPACE}/boards/shields/nocfree_and/"',
+            workflow,
+        )
+        self.assertIn(
+            'dongle_keymap="${dongle_keymap}nocfree_and_dongle.keymap"',
+            workflow,
+        )
+        self.assertIn('-DKEYMAP_FILE="${dongle_keymap}"', workflow)
 
 
 def role_dir(role: str) -> Path:
