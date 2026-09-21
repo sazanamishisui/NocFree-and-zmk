@@ -60,6 +60,8 @@ jobs:
           pad_keymap="${pad_keymap}nocfree_and_pad.keymap"
           pad_diag_keymap="${GITHUB_WORKSPACE}/boards/nocfree/nocfree_and/"
           pad_diag_keymap="${pad_diag_keymap}pad_usb_diag.keymap"
+          pad_diag_overlay="${GITHUB_WORKSPACE}/boards/nocfree/nocfree_and/"
+          pad_diag_overlay="${pad_diag_overlay}pad_usb_diag.overlay"
 
           west build -s zmk/app -d /tmp/ws/build/left \
             -b nocfree_and_left/nrf52833/zmk -- \
@@ -98,6 +100,9 @@ jobs:
             -DCONFIG_ZMK_SPLIT=n \
             -DCONFIG_ZMK_USB=y \
             -DCONFIG_ZMK_BLE=n \
+            -DCONFIG_ZMK_USB_LOGGING=y \
+            -DCONFIG_NOCFREE_PAD_I2C_DIAGNOSTIC=y \
+            -DEXTRA_DTC_OVERLAY_FILE="${pad_diag_overlay}" \
             -DKEYMAP_FILE="${pad_diag_keymap}"
 
           west build -s zmk/app -d /tmp/ws/build/dongle \
