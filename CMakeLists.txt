@@ -7,6 +7,9 @@ zephyr_library_sources_ifdef(CONFIG_NOCFREE_KSCAN_PCA9555
 zephyr_library_sources_ifdef(CONFIG_NOCFREE_RECOVERY_CDC_1200_TOUCH
                              src/cdc_1200_touch.c)
 
-# Compiled for every role, but the implementation is emitted only when the
-# dongle keymap enables the matching devicetree behavior node.
-zephyr_library_sources(src/behavior_bt_output.c)
+# The output router is dongle-only. ZMK's event manager headers are internal
+# application headers, so expose that include directory to this module target.
+if(CONFIG_SHIELD_NOCFREE_AND_DONGLE)
+  zephyr_library_include_directories(${APPLICATION_SOURCE_DIR}/include)
+  zephyr_library_sources(src/behavior_bt_output.c)
+endif()

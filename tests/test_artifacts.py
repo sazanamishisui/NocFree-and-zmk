@@ -59,6 +59,8 @@ class SourceConfigurationTest(unittest.TestCase):
         self.assertIn("ZMK_SUBSCRIPTION", source)
 
         cmake = (ROOT / "CMakeLists.txt").read_text()
+        self.assertIn("if(CONFIG_SHIELD_NOCFREE_AND_DONGLE)", cmake)
+        self.assertIn("${APPLICATION_SOURCE_DIR}/include", cmake)
         self.assertIn("src/behavior_bt_output.c", cmake)
 
     def test_extra_studio_layers_are_reserved(self):
