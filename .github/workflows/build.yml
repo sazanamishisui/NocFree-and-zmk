@@ -27,7 +27,7 @@ jobs:
     needs: validate
     uses: zmkfirmware/zmk/.github/workflows/build-user-config.yml@6e2ef41e022d555b10f116e395832913f71717b3
 
-  # Rebuild the three normal-role images so tests can inspect the resolved
+  # Rebuild the four normal-role images so tests can inspect the resolved
   # Kconfig, devicetree, map files and UF2 boundaries.
   artifacts:
     name: Verify built artifacts
@@ -37,7 +37,7 @@ jobs:
       image: zmkfirmware/zmk-build-arm:stable
     steps:
       - uses: actions/checkout@v4
-      - name: Build left, right and dongle from the pinned manifest
+      - name: Build left, right, Pad and dongle from the pinned manifest
         run: |
           if [ -z "${ZEPHYR_SDK_INSTALL_DIR:-}" ]; then
             sdk=$(ls -d /opt/zephyr-sdk-* 2>/dev/null | head -1)
@@ -56,6 +56,8 @@ jobs:
 
           dongle_keymap="${GITHUB_WORKSPACE}/boards/shields/nocfree_and/"
           dongle_keymap="${dongle_keymap}nocfree_and_dongle.keymap"
+          pad_keymap="${GITHUB_WORKSPACE}/boards/nocfree/nocfree_and/"
+          pad_keymap="${pad_keymap}nocfree_and_pad.keymap"
 
           west build -s zmk/app -d /tmp/ws/build/left \
             -b nocfree_and_left/nrf52833/zmk -- \
@@ -74,6 +76,18 @@ jobs:
             -DZMK_EXTRA_MODULES="${GITHUB_WORKSPACE}" \
             -DCONFIG_ZMK_SPLIT=y \
             -DCONFIG_ZMK_SPLIT_ROLE_CENTRAL=n
+
+          west build -s zmk/app -d /tmp/ws/build/pad \
+            -b nocfree_and_pad/nrf52833/zmk -- \
+            -DZMK_CONFIG=/tmp/ws/config \
+            -DZMK_EXTRA_MODULES="${GITHUB_WORKSPACE}" \
+            -DCONFIG_ZMK_SPLIT=y \
+            -DCONFIG_ZMK_SPLIT_ROLE_CENTRAL=n \
+            -DCONFIG_ZMK_USB=n \
+            -DCONFIG_USB_DEVICE_STACK=y \
+            -DCONFIG_USB_DEVICE_INITIALIZE_AT_BOOT=y \
+            -DCONFIG_ZMK_SPLIT_BLE_PERIPHERAL_POSITION_QUEUE_SIZE=32 \
+            -DKEYMAP_FILE="${pad_keymap}"
 
           west build -s zmk/app -d /tmp/ws/build/dongle \
             -b xiao_ble//zmk -S studio-rpc-usb-uart -- \
