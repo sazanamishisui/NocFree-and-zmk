@@ -36,7 +36,8 @@ class SourceConfigurationTest(unittest.TestCase):
     def test_ble_profile_keys_use_stock_bindings_and_event_router(self):
         text = KEYMAP.read_text()
         self.assertIn(
-            "&trans &bt BT_SEL 0 &bt BT_SEL 1 &bt BT_SEL 2 &bt BT_SEL 3 &bt BT_SEL 4 &studio_unlock",
+            "&trans &bt BT_SEL 0 &bt BT_SEL 1 &bt BT_SEL 2 "
+            "&bt BT_SEL 3 &bt BT_SEL 4 &studio_unlock",
             text,
         )
         self.assertIn("&trans &out OUT_USB", text)
