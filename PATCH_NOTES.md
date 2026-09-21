@@ -1,24 +1,41 @@
-# v0.1 patch contents
+# v0.3.0 patch contents
 
-Apply these paths over `electricdoc187/NocFree-and-zmk` branch `jis-studio`.
-All listed files are complete files, not fragments.
+## Changes in v0.3.1
+
+- `Fn+1` through `Fn+5` select a Bluetooth profile, then poll its connection
+  state every 100 ms before selecting BLE output.
+- The connection wait times out after five seconds and leaves USB selected.
+- `Fn+U` now uses the same native behavior with parameter 5, cancelling any
+  pending Bluetooth switch before selecting USB.
+- A newer profile request replaces an older pending request.
+
+## Changes from v0.2.2 in v0.3.0
+
+- Replaced the five queued BLE macros with one native `bt_out` behavior.
+- The behavior calls profile selection and BLE output selection inside the same
+  key-press callback, so profile switching cannot interrupt a later queued
+  macro action.
+- Added the behavior driver, devicetree binding, and module build entry.
+- `Fn+1` through `Fn+5` now bind directly to `&bt_out 0` through `&bt_out 4`.
+
+v0.2, v0.2.1, and v0.2.2 all confirmed that `BT_SEL` worked while the queued
+`OUT_BLE` action did not reliably change the selected transport. v0.3.0 no
+longer uses a macro for this operation.
+
+Apply these complete files over the current `v0.2-keymap-studio` branch.
 
 ## Replaced files
 
-- `build.yaml`
-- `.github/workflows/build.yml`
+- `CMakeLists.txt`
 - `tests/test_artifacts.py`
-- `tests/run.sh`
+- `boards/shields/nocfree_and/nocfree_and_dongle.keymap`
+- `README_DONGLE.md`
+- `PATCH_NOTES.md`
 
 ## New files
 
-- `boards/shields/nocfree_and/Kconfig.shield`
-- `boards/shields/nocfree_and/Kconfig.defconfig`
-- `boards/shields/nocfree_and/nocfree_and_dongle.conf`
-- `boards/shields/nocfree_and/nocfree_and_dongle.overlay`
-- `boards/shields/nocfree_and/nocfree_and-layouts.dtsi`
-- `boards/shields/nocfree_and/nocfree_and_dongle.keymap`
-- `README_DONGLE.md`
+- `dts/bindings/behaviors/nocfree,behavior-bt-output.yaml`
+- `src/behavior_bt_output.c`
 
 ## Intentionally unchanged
 

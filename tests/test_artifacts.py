@@ -29,6 +29,50 @@ UF2_BLOCK = 512
 CODE_START, CODE_SIZE = spec.PARTITIONS["code_partition"]
 CODE_END = CODE_START + CODE_SIZE
 
+KEYMAP = ROOT / "boards" / "shields" / "nocfree_and" / "nocfree_and_dongle.keymap"
+
+
+class SourceConfigurationTest(unittest.TestCase):
+    def test_ble_profile_keys_use_atomic_bt_output_behavior(self):
+        text = KEYMAP.read_text()
+        self.assertIn('compatible = "nocfree,behavior-bt-output";', text)
+        self.assertIn(
+            "&trans &bt_out 0 &bt_out 1 &bt_out 2 &bt_out 3 &bt_out 4 &studio_unlock",
+            text,
+        )
+        self.assertIn("&bt_out 5", text)
+
+        source = (ROOT / "src" / "behavior_bt_output.c").read_text()
+        self.assertIn("zmk_ble_active_profile_is_connected", source)
+        self.assertIn("k_work_reschedule", source)
+        self.assertIn("BLE_OUTPUT_TIMEOUT_MS 5000", source)
+        self.assertIn("cancel_pending_ble_output", source)
+        self.assertIn("binding->param1 == USB_OUTPUT_PARAM", source)
+        self.assertIn("ZMK_TRANSPORT_BLE", source)
+        self.assertIn("BEHAVIOR_PARAMETER_VALUE_TYPE_VALUE", source)
+        self.assertIn(".parameter_metadata = &metadata", source)
+
+        cmake = (ROOT / "CMakeLists.txt").read_text()
+        self.assertIn("src/behavior_bt_output.c", cmake)
+
+        binding = (
+            ROOT
+            / "dts"
+            / "bindings"
+            / "behaviors"
+            / "nocfree,behavior-bt-output.yaml"
+        ).read_text()
+        self.assertIn('compatible: "nocfree,behavior-bt-output"', binding)
+        self.assertIn("include: one_param.yaml", binding)
+
+    def test_extra_studio_layers_are_reserved(self):
+        text = KEYMAP.read_text()
+        for layer in ("navigation_layer", "numpad_layer", "work_layer", "reserved_layer"):
+            with self.subTest(layer=layer):
+                node = re.search(rf"{layer}\s*\{{(.*?)\n\s*\}};", text, re.S)
+                self.assertIsNotNone(node)
+                self.assertIn('status = "reserved";', node.group(1))
+
 
 def role_dir(role: str) -> Path:
     return BUILD / role / "zephyr"
@@ -220,7 +264,10 @@ class ArtifactTest(unittest.TestCase):
     def test_compiled_transform_covers_every_position(self):
         for role in self.ROLES:
             text = (role_dir(role) / "zephyr.dts").read_text()
-            body = re.search(r"^[ \t]*map = <(.*?)>;[ \t]*$", text, re.M | re.S)
+            # Match only an exact `map` property. Studio/macros add properties
+            # such as `bindings-map`; an unanchored search would mistake those
+            # for the keyboard matrix transform.
+            body = re.search(r"^\s*map\s*=\s*<(.*?)>;", text, re.S | re.M)
             with self.subTest(role):
                 self.assertIsNotNone(body)
                 values = [int(v, 0) for v in re.findall(r"0x[0-9a-f]+|\b\d+\b", body.group(1))]

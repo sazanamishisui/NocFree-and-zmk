@@ -13,9 +13,9 @@
 / {
     behaviors {
         /*
-         * Select a host profile and BLE output inside one behavior callback.
-         * This deliberately bypasses the macro queue: on the pinned ZMK
-         * revision, profile selection interrupts a queued output action.
+         * Parameters 0-4 select a BLE profile and switch output only after
+         * that profile connects. Parameter 5 cancels a pending BLE switch and
+         * selects USB.
          */
         bt_out: bt_output {
             compatible = "nocfree,behavior-bt-output";
@@ -72,7 +72,7 @@
                 &trans &trans &trans &bt BT_CLR &trans &trans &trans &trans
                 /* QWERTY row */
                 &trans &trans &trans &trans &trans &trans
-                &trans &out OUT_USB &trans &trans &trans &trans &trans &bootloader_hold 0 0
+                &trans &bt_out 5 &trans &trans &trans &trans &trans &bootloader_hold 0 0
                 /* Home row */
                 &trans &trans &trans &trans &trans &trans
                 &trans &trans &trans &trans &trans &trans &trans &trans
