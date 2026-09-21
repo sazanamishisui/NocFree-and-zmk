@@ -58,6 +58,8 @@ jobs:
           dongle_keymap="${dongle_keymap}nocfree_and_dongle.keymap"
           pad_keymap="${GITHUB_WORKSPACE}/boards/nocfree/nocfree_and/"
           pad_keymap="${pad_keymap}nocfree_and_pad.keymap"
+          pad_diag_keymap="${GITHUB_WORKSPACE}/boards/nocfree/nocfree_and/"
+          pad_diag_keymap="${pad_diag_keymap}pad_usb_diag.keymap"
 
           west build -s zmk/app -d /tmp/ws/build/left \
             -b nocfree_and_left/nrf52833/zmk -- \
@@ -88,6 +90,15 @@ jobs:
             -DCONFIG_USB_DEVICE_INITIALIZE_AT_BOOT=y \
             -DCONFIG_ZMK_SPLIT_BLE_PERIPHERAL_POSITION_QUEUE_SIZE=32 \
             -DKEYMAP_FILE="${pad_keymap}"
+
+          west build -s zmk/app -d /tmp/ws/build/pad_usb_diagnostic \
+            -b nocfree_and_pad/nrf52833/zmk -- \
+            -DZMK_CONFIG=/tmp/ws/config \
+            -DZMK_EXTRA_MODULES="${GITHUB_WORKSPACE}" \
+            -DCONFIG_ZMK_SPLIT=n \
+            -DCONFIG_ZMK_USB=y \
+            -DCONFIG_ZMK_BLE=n \
+            -DKEYMAP_FILE="${pad_diag_keymap}"
 
           west build -s zmk/app -d /tmp/ws/build/dongle \
             -b xiao_ble//zmk -S studio-rpc-usb-uart -- \
