@@ -33,29 +33,35 @@ KEYMAP = ROOT / "boards" / "shields" / "nocfree_and" / "nocfree_and_dongle.keyma
 
 
 class SourceConfigurationTest(unittest.TestCase):
-    def test_ble_profile_keys_press_ble_output_then_profile(self):
+    def test_ble_profile_keys_use_atomic_bt_output_behavior(self):
         text = KEYMAP.read_text()
-        for profile in range(5):
-            with self.subTest(profile=profile):
-                node = re.search(
-                    rf"ble_profile_{profile + 1}:.*?\{{(.*?)\n\s*\}};",
-                    text,
-                    re.S,
-                )
-                self.assertIsNotNone(node)
-                self.assertRegex(
-                    node.group(1),
-                    rf"bindings\s*=\s*<&macro_press>,\s*<&out OUT_BLE>,\s*"
-                    rf"<&bt BT_SEL {profile}>;",
-                )
-                self.assertIn("wait-ms = <100>;", node.group(1))
-
+        self.assertIn('compatible = "nocfree,behavior-bt-output";', text)
         self.assertIn(
-            "&trans &ble_profile_1 &ble_profile_2 &ble_profile_3 "
-            "&ble_profile_4 &ble_profile_5 &studio_unlock",
+            "&trans &bt_out 0 &bt_out 1 &bt_out 2 &bt_out 3 &bt_out 4 &studio_unlock",
             text,
         )
         self.assertIn("&out OUT_USB", text)
+
+        source = (ROOT / "src" / "behavior_bt_output.c").read_text()
+        select = source.index("zmk_ble_prof_select")
+        output = source.index("zmk_endpoint_set_preferred_transport")
+        self.assertLess(select, output)
+        self.assertIn("ZMK_TRANSPORT_BLE", source)
+        self.assertIn("BEHAVIOR_PARAMETER_VALUE_TYPE_RANGE", source)
+        self.assertIn(".parameter_metadata = &metadata", source)
+
+        cmake = (ROOT / "CMakeLists.txt").read_text()
+        self.assertIn("src/behavior_bt_output.c", cmake)
+
+        binding = (
+            ROOT
+            / "dts"
+            / "bindings"
+            / "behaviors"
+            / "nocfree,behavior-bt-output.yaml"
+        ).read_text()
+        self.assertIn('compatible: "nocfree,behavior-bt-output"', binding)
+        self.assertIn("include: one_param.yaml", binding)
 
     def test_extra_studio_layers_are_reserved(self):
         text = KEYMAP.read_text()

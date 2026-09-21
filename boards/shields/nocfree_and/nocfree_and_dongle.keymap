@@ -11,52 +11,18 @@
 #include <dt-bindings/zmk/outputs.h>
 
 / {
-    macros {
-        /*
-         * Prefer BLE output before selecting the requested host profile.
-         * Both system behaviors act on key press, so invoke them in explicit
-         * press-only mode. This avoids the default macro tap sequence adding
-         * release events between the two state changes. BT_SEL remains last.
-         * Keeping one macro per profile avoids depending on parameterized
-         * macro support and makes every action visible to ZMK Studio.
-         */
-        ble_profile_1: ble_profile_1 {
-            compatible = "zmk,behavior-macro";
-            #binding-cells = <0>;
-            wait-ms = <100>;
-            bindings = <&macro_press>, <&out OUT_BLE>, <&bt BT_SEL 0>;
-        };
-
-        ble_profile_2: ble_profile_2 {
-            compatible = "zmk,behavior-macro";
-            #binding-cells = <0>;
-            wait-ms = <100>;
-            bindings = <&macro_press>, <&out OUT_BLE>, <&bt BT_SEL 1>;
-        };
-
-        ble_profile_3: ble_profile_3 {
-            compatible = "zmk,behavior-macro";
-            #binding-cells = <0>;
-            wait-ms = <100>;
-            bindings = <&macro_press>, <&out OUT_BLE>, <&bt BT_SEL 2>;
-        };
-
-        ble_profile_4: ble_profile_4 {
-            compatible = "zmk,behavior-macro";
-            #binding-cells = <0>;
-            wait-ms = <100>;
-            bindings = <&macro_press>, <&out OUT_BLE>, <&bt BT_SEL 3>;
-        };
-
-        ble_profile_5: ble_profile_5 {
-            compatible = "zmk,behavior-macro";
-            #binding-cells = <0>;
-            wait-ms = <100>;
-            bindings = <&macro_press>, <&out OUT_BLE>, <&bt BT_SEL 4>;
-        };
-    };
-
     behaviors {
+        /*
+         * Select a host profile and BLE output inside one behavior callback.
+         * This deliberately bypasses the macro queue: on the pinned ZMK
+         * revision, profile selection interrupts a queued output action.
+         */
+        bt_out: bt_output {
+            compatible = "nocfree,behavior-bt-output";
+            label = "BT_OUTPUT";
+            #binding-cells = <1>;
+        };
+
         bootloader_hold: bootloader_hold {
             compatible = "zmk,behavior-hold-tap";
             label = "BOOTLOADER_HOLD";
@@ -102,7 +68,7 @@
                 &bootloader_hold 0 0 &kp C_BRIGHTNESS_DEC &kp C_BRIGHTNESS_INC &trans &trans &trans &trans
                 &kp C_PREV &kp C_PP &kp C_NEXT &kp C_MUTE &kp C_VOL_DN &kp C_VOL_UP &trans &trans
                 /* Number row */
-                &trans &ble_profile_1 &ble_profile_2 &ble_profile_3 &ble_profile_4 &ble_profile_5 &studio_unlock
+                &trans &bt_out 0 &bt_out 1 &bt_out 2 &bt_out 3 &bt_out 4 &studio_unlock
                 &trans &trans &trans &bt BT_CLR &trans &trans &trans &trans
                 /* QWERTY row */
                 &trans &trans &trans &trans &trans &trans

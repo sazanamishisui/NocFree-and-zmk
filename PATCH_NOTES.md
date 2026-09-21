@@ -1,45 +1,32 @@
-# v0.2.2 patch contents
+# v0.3.0 patch contents
 
-## Changes from v0.2.1
+## Changes from v0.2.2
 
-- Changed each BLE profile macro to explicit press-only activation.
-- `OUT_BLE` still runs first, followed by a 100 ms wait and `BT_SEL`.
-- This addresses the field-observed v0.2.1 failure where the profile connected
-  but the dongle continued sending output to USB.
+- Replaced the five queued BLE macros with one native `bt_out` behavior.
+- The behavior calls profile selection and BLE output selection inside the same
+  key-press callback, so profile switching cannot interrupt a later queued
+  macro action.
+- Added the behavior driver, devicetree binding, and module build entry.
+- `Fn+1` through `Fn+5` now bind directly to `&bt_out 0` through `&bt_out 4`.
 
-## Changes from v0.2
+v0.2, v0.2.1, and v0.2.2 all confirmed that `BT_SEL` worked while the queued
+`OUT_BLE` action did not reliably change the selected transport. v0.3.0 no
+longer uses a macro for this operation.
 
-- Reordered each BLE profile macro to select BLE output before `BT_SEL`.
-- Added a 100 ms inter-action wait; `BT_SEL` remains the final macro action.
-- v0.2.1 did not resolve the field-observed USB routing problem; v0.2.2 adds
-  explicit press-only activation for the two system behaviors.
-
-## Changes from v0.1
-
-- Added one-step BLE host switching macros on `Fn+1` through `Fn+5`.
-- Kept `Fn+U` as the explicit USB output selector.
-- Marked Nav, Numpad, Work, and Reserved as ZMK Studio reserve layers.
-- Added source validation for the output macros and reserve-layer metadata.
-
-Apply these paths over `electricdoc187/NocFree-and-zmk` branch `jis-studio`.
-All listed files are complete files, not fragments.
+Apply these complete files over the current `v0.2-keymap-studio` branch.
 
 ## Replaced files
 
-- `build.yaml`
-- `.github/workflows/build.yml`
+- `CMakeLists.txt`
 - `tests/test_artifacts.py`
-- `tests/run.sh`
+- `boards/shields/nocfree_and/nocfree_and_dongle.keymap`
+- `README_DONGLE.md`
+- `PATCH_NOTES.md`
 
 ## New files
 
-- `boards/shields/nocfree_and/Kconfig.shield`
-- `boards/shields/nocfree_and/Kconfig.defconfig`
-- `boards/shields/nocfree_and/nocfree_and_dongle.conf`
-- `boards/shields/nocfree_and/nocfree_and_dongle.overlay`
-- `boards/shields/nocfree_and/nocfree_and-layouts.dtsi`
-- `boards/shields/nocfree_and/nocfree_and_dongle.keymap`
-- `README_DONGLE.md`
+- `dts/bindings/behaviors/nocfree,behavior-bt-output.yaml`
+- `src/behavior_bt_output.c`
 
 ## Intentionally unchanged
 
