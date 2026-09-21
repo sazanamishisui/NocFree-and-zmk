@@ -43,13 +43,15 @@ The last four are deliberately transparent in v0.1. This keeps first-boot
 behavior identical to the existing two-layer firmware; they can be populated
 later in ZMK Studio.
 
-## Host output switching in v0.3.2
+## Host output switching in v0.3.3
 
-The Fn number-row bindings now combine host profile selection and output
-routing so a single chord switches the XIAO dongle to the requested BLE host:
+The Fn number-row uses Studio-compatible stock profile bindings. A separate
+position-event listener handles output routing so a single chord switches the
+XIAO dongle to the requested BLE host even when Studio has retained its
+dynamic keymap:
 
-- `Fn+1` through `Fn+5`: select Bluetooth profile 1 through 5, then prefer BLE
-  after a 750 ms non-blocking delay
+- `Fn+1` through `Fn+5`: use stock `BT_SEL` for Bluetooth profile 1 through 5;
+  the event listener then prefers BLE after a 750 ms non-blocking delay
 - `Fn+U`: cancel any pending BLE switch and prefer USB output to the PC or KVM
   connected to the XIAO
 - `Fn+0`: clear the bond for the currently selected Bluetooth profile
@@ -57,10 +59,11 @@ routing so a single chord switches the XIAO dongle to the requested BLE host:
 The pinned ZMK revision did not reliably apply `OUT_BLE` when output selection
 and `BT_SEL` were placed in one queued macro. v0.3.0 also showed that selecting
 BLE immediately after changing profiles can occur before the new profile is
-ready. The connection-state polling attempted in v0.3.1 did not trigger the
-output change reliably on the pinned ZMK revision. v0.3.2 therefore uses a
-750 ms delayed work item and then invokes the same endpoint API as `OUT_BLE`.
-`Fn+U` remains the explicit recovery and cancellation path.
+ready. The connection-state polling attempted in v0.3.1 and the custom-key
+delayed switch in v0.3.2 did not trigger the output change in field tests.
+v0.3.3 observes the physical Fn profile keys independently of Studio's dynamic
+binding, schedules the same 750 ms output request, and keeps `Fn+U` as the
+explicit recovery and cancellation path.
 
 ## Important topology change
 

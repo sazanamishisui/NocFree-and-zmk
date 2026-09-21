@@ -1,4 +1,16 @@
-# v0.3.0 patch contents
+# v0.3.3 patch contents
+
+## Changes in v0.3.3
+
+- Restored the Studio-compatible stock bindings on `Fn+1` through `Fn+5`:
+  `&bt BT_SEL 0` through `&bt BT_SEL 4`.
+- Replaced the custom key behavior with a position-event listener. When one of
+  those five physical keys is pressed while Fn is active, the listener waits
+  750 ms and then requests BLE output.
+- `Fn+U` uses stock `&out OUT_USB`; the listener also cancels any pending BLE
+  request at that position.
+- This addresses field evidence that Studio continued to execute its saved
+  standard Bluetooth binding instead of the custom `bt_out` binding.
 
 ## Changes in v0.3.2
 
@@ -30,7 +42,7 @@ v0.2, v0.2.1, and v0.2.2 all confirmed that `BT_SEL` worked while the queued
 `OUT_BLE` action did not reliably change the selected transport. v0.3.0 no
 longer uses a macro for this operation.
 
-Apply these complete files over the current `v0.2-keymap-studio` branch.
+Apply these complete files over the current `dongle` branch.
 
 ## Replaced files
 
@@ -40,7 +52,7 @@ Apply these complete files over the current `v0.2-keymap-studio` branch.
 - `README_DONGLE.md`
 - `PATCH_NOTES.md`
 
-## New files
+## Existing supporting files (may remain in the repository)
 
 - `dts/bindings/behaviors/nocfree,behavior-bt-output.yaml`
 - `src/behavior_bt_output.c`
