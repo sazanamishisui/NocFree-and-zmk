@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: MIT
-"""Inspect built firmware for the two NocFree peripherals and USB dongle.
+"""Inspect built firmware for three NocFree peripherals and USB dongle.
 
-Point NOCFREE_BUILD_DIR at a directory containing `left/`, `right/`, and
-`dongle/` build trees, or accept the default used by scripts/build-local.sh.
+Point NOCFREE_BUILD_DIR at a directory containing `left/`, `right/`, `pad/`
+and `dongle/` build trees, or accept the default used by GitHub Actions.
 """
 
 from __future__ import annotations
@@ -32,9 +32,38 @@ CODE_END = CODE_START + CODE_SIZE
 KEYMAP = ROOT / "boards" / "shields" / "nocfree_and" / "nocfree_and_dongle.keymap"
 BUILD_MATRIX = ROOT / "build.yaml"
 WORKFLOW = ROOT / ".github" / "workflows" / "build.yml"
+PAD_DTS = ROOT / "boards" / "nocfree" / "nocfree_and" / "nocfree_and_pad_nrf52833_zmk.dts"
+PAD_KEYMAP = ROOT / "boards" / "nocfree" / "nocfree_and" / "nocfree_and_pad.keymap"
 
 
 class SourceConfigurationTest(unittest.TestCase):
+    def test_pad_sources_and_build_entries_exist(self):
+        self.assertTrue(PAD_DTS.is_file())
+        self.assertTrue(PAD_KEYMAP.is_file())
+
+        matrix = BUILD_MATRIX.read_text()
+        for artifact in (
+            "nocfree_and_left_peripheral",
+            "nocfree_and_right_peripheral",
+            "nocfree_and_pad_peripheral",
+            "nocfree_and_dongle",
+            "nocfree_and_left_settings_reset",
+            "nocfree_and_right_settings_reset",
+            "nocfree_and_pad_settings_reset",
+            "nocfree_and_dongle_settings_reset",
+        ):
+            with self.subTest(artifact):
+                self.assertIn(f"artifact-name: {artifact}", matrix)
+
+        pad = PAD_DTS.read_text()
+        self.assertIn("col-offset = <85>", pad)
+        self.assertEqual(len(re.findall(r"<&pca(?:20|22|24)\s+\d+>", pad)), 21)
+
+        keymap = PAD_KEYMAP.read_text()
+        bindings = re.search(r"bindings\s*=\s*<(.*?)>;", keymap, re.S)
+        self.assertIsNotNone(bindings)
+        self.assertEqual(len(re.findall(r"&\w+", bindings.group(1))), 106)
+
     def test_ble_profile_keys_use_stock_bindings_and_event_router(self):
         text = KEYMAP.read_text()
         self.assertIn(
@@ -120,13 +149,30 @@ class SourceConfigurationTest(unittest.TestCase):
         )
         self.assertIn('-DKEYMAP_FILE="${dongle_keymap}"', workflow)
 
+    def test_pad_build_explicitly_selects_its_keymap(self):
+        expected = (
+            "-DKEYMAP_FILE=${GITHUB_WORKSPACE}/boards/nocfree/nocfree_and/"
+            "nocfree_and_pad.keymap"
+        )
+        self.assertGreaterEqual(BUILD_MATRIX.read_text().count(expected), 2)
+        workflow = WORKFLOW.read_text()
+        self.assertIn(
+            'pad_keymap="${GITHUB_WORKSPACE}/boards/nocfree/nocfree_and/"',
+            workflow,
+        )
+        self.assertIn('pad_keymap="${pad_keymap}nocfree_and_pad.keymap"', workflow)
+        self.assertIn('-DKEYMAP_FILE="${pad_keymap}"', workflow)
+
 
 def role_dir(role: str) -> Path:
     return BUILD / role / "zephyr"
 
 
 def available() -> bool:
-    return all((role_dir(role) / ".config").is_file() for role in ("left", "right", "dongle"))
+    return all(
+        (role_dir(role) / ".config").is_file()
+        for role in ("left", "right", "pad", "dongle")
+    )
 
 
 def kconfig(role: str) -> dict[str, str]:
@@ -160,11 +206,11 @@ def uf2_blocks(path: Path):
 
 @unittest.skipUnless(available(), f"no complete dongle build output under {BUILD}")
 class ArtifactTest(unittest.TestCase):
-    HALVES = ("left", "right")
-    ROLES = ("left", "right", "dongle")
+    PERIPHERALS = ("left", "right", "pad")
+    ROLES = ("left", "right", "pad", "dongle")
 
-    def test_scanner_is_compiled_into_both_halves(self):
-        for role in self.HALVES:
+    def test_scanner_is_compiled_into_all_peripherals(self):
+        for role in self.PERIPHERALS:
             config = kconfig(role)
             with self.subTest(role):
                 self.assertEqual(config.get("CONFIG_NOCFREE_KSCAN_PCA9555"), "y")
@@ -172,21 +218,25 @@ class ArtifactTest(unittest.TestCase):
                 self.assertEqual(config.get("CONFIG_I2C"), "y")
 
     def test_split_roles_are_correct(self):
-        left, right, dongle = (kconfig(r) for r in self.ROLES)
-        for config in (left, right, dongle):
+        left, right, pad, dongle = (kconfig(r) for r in self.ROLES)
+        for config in (left, right, pad, dongle):
             self.assertEqual(config.get("CONFIG_ZMK_SPLIT"), "y")
         self.assertNotEqual(left.get("CONFIG_ZMK_SPLIT_ROLE_CENTRAL"), "y")
         self.assertNotEqual(right.get("CONFIG_ZMK_SPLIT_ROLE_CENTRAL"), "y")
+        self.assertNotEqual(pad.get("CONFIG_ZMK_SPLIT_ROLE_CENTRAL"), "y")
         self.assertEqual(dongle.get("CONFIG_ZMK_SPLIT_ROLE_CENTRAL"), "y")
-        self.assertEqual(dongle.get("CONFIG_ZMK_SPLIT_BLE_CENTRAL_PERIPHERALS"), "2")
+        self.assertEqual(dongle.get("CONFIG_ZMK_SPLIT_BLE_CENTRAL_PERIPHERALS"), "3")
+        self.assertEqual(dongle.get("CONFIG_BT_MAX_CONN"), "8")
+        self.assertEqual(dongle.get("CONFIG_BT_MAX_PAIRED"), "8")
 
     def test_only_the_dongle_has_usb_hid(self):
         self.assertNotEqual(kconfig("left").get("CONFIG_ZMK_USB"), "y")
         self.assertNotEqual(kconfig("right").get("CONFIG_ZMK_USB"), "y")
+        self.assertNotEqual(kconfig("pad").get("CONFIG_ZMK_USB"), "y")
         self.assertEqual(kconfig("dongle").get("CONFIG_ZMK_USB"), "y")
 
-    def test_both_halves_have_bluetooth_and_cdc_recovery(self):
-        for role in self.HALVES:
+    def test_all_peripherals_have_bluetooth_and_cdc_recovery(self):
+        for role in self.PERIPHERALS:
             config = kconfig(role)
             with self.subTest(role):
                 self.assertEqual(config.get("CONFIG_ZMK_BLE"), "y")
@@ -197,7 +247,7 @@ class ArtifactTest(unittest.TestCase):
                 self.assertEqual(config.get("CONFIG_USB_DEVICE_INITIALIZE_AT_BOOT"), "y")
 
     def test_halves_keep_the_conservative_lf_clock(self):
-        for role in self.HALVES:
+        for role in self.PERIPHERALS:
             config = kconfig(role)
             with self.subTest(role):
                 self.assertEqual(config.get("CONFIG_CLOCK_CONTROL_NRF_K32SRC_RC"), "y")
@@ -220,12 +270,16 @@ class ArtifactTest(unittest.TestCase):
             kconfig("right").get("CONFIG_ZMK_SPLIT_BLE_PERIPHERAL_POSITION_QUEUE_SIZE"), "32"
         )
         self.assertEqual(
+            kconfig("pad").get("CONFIG_ZMK_SPLIT_BLE_PERIPHERAL_POSITION_QUEUE_SIZE"), "32"
+        )
+        self.assertEqual(
             kconfig("dongle").get("CONFIG_ZMK_SPLIT_BLE_CENTRAL_POSITION_QUEUE_SIZE"), "32"
         )
 
     def test_studio_exists_only_on_the_dongle(self):
         self.assertNotEqual(kconfig("left").get("CONFIG_ZMK_STUDIO"), "y")
         self.assertNotEqual(kconfig("right").get("CONFIG_ZMK_STUDIO"), "y")
+        self.assertNotEqual(kconfig("pad").get("CONFIG_ZMK_STUDIO"), "y")
         self.assertEqual(kconfig("dongle").get("CONFIG_ZMK_STUDIO"), "y")
 
     def test_excluded_features_are_absent(self):
@@ -240,7 +294,7 @@ class ArtifactTest(unittest.TestCase):
                     self.assertNotEqual(config.get(symbol), "y")
 
     def test_halves_link_into_the_preserved_code_partition(self):
-        for role in self.HALVES:
+        for role in self.PERIPHERALS:
             config = kconfig(role)
             with self.subTest(role):
                 self.assertEqual(config.get("CONFIG_USE_DT_CODE_PARTITION"), "y")
@@ -248,7 +302,7 @@ class ArtifactTest(unittest.TestCase):
                 self.assertEqual(int(config["CONFIG_FLASH_LOAD_SIZE"], 0), CODE_SIZE)
 
     def test_half_uf2_writes_only_inside_the_code_partition(self):
-        for role in self.HALVES:
+        for role in self.PERIPHERALS:
             uf2 = role_dir(role) / "zmk.uf2"
             with self.subTest(role):
                 self.assertTrue(uf2.is_file(), f"missing {uf2}")
@@ -269,7 +323,7 @@ class ArtifactTest(unittest.TestCase):
         fs_start, fs_end = spec.FACTORY_FILESYSTEM
         boot_start = spec.PARTITIONS["boot_partition"][0]
         storage_start = spec.PARTITIONS["storage_partition"][0]
-        for role in self.HALVES:
+        for role in self.PERIPHERALS:
             for block in uf2_blocks(role_dir(role) / "zmk.uf2"):
                 first, last = block["address"], block["address"] + block["payload"]
                 with self.subTest(f"{role} 0x{first:x}"):
@@ -289,6 +343,7 @@ class ArtifactTest(unittest.TestCase):
     def test_compiled_devicetree_has_the_exact_key_map(self):
         self.assertEqual(self.compiled_key_inputs("left"), spec.LEFT_INPUTS)
         self.assertEqual(self.compiled_key_inputs("right"), spec.RIGHT_INPUTS)
+        self.assertEqual(self.compiled_key_inputs("pad"), spec.PAD_INPUTS)
 
     def test_dongle_compiles_all_studio_editable_layers(self):
         text = (role_dir("dongle") / "zephyr.dts").read_text()
@@ -297,20 +352,28 @@ class ArtifactTest(unittest.TestCase):
                 self.assertIn(f'display-name = "{display_name}";', text)
 
     def test_compiled_devicetree_excludes_unpopulated_bits(self):
-        for role, unused in (("left", spec.LEFT_UNUSED), ("right", spec.RIGHT_UNUSED)):
+        for role, unused in (
+            ("left", spec.LEFT_UNUSED),
+            ("right", spec.RIGHT_UNUSED),
+            ("pad", spec.PAD_UNUSED),
+        ):
             declared = set(self.compiled_key_inputs(role))
             for label, bits in unused.items():
                 for bit in bits:
                     with self.subTest(f"{role} {label} bit {bit}"):
                         self.assertNotIn((label, bit), declared)
 
-    def test_only_the_right_half_offsets_its_columns(self):
+    def test_right_and_pad_have_the_expected_column_offsets(self):
         left = (role_dir("left") / "zephyr.dts").read_text()
         right = (role_dir("right") / "zephyr.dts").read_text()
+        pad = (role_dir("pad") / "zephyr.dts").read_text()
         dongle = (role_dir("dongle") / "zephyr.dts").read_text()
         offset = re.search(r"col-offset = <\s*(0x[0-9a-f]+|\d+)\s*>", right)
         self.assertIsNotNone(offset)
         self.assertEqual(int(offset.group(1), 0), spec.RIGHT_COL_OFFSET)
+        pad_offset = re.search(r"col-offset = <\s*(0x[0-9a-f]+|\d+)\s*>", pad)
+        self.assertIsNotNone(pad_offset)
+        self.assertEqual(int(pad_offset.group(1), 0), spec.PAD_COL_OFFSET)
         self.assertNotIn("col-offset", left)
         self.assertNotIn("col-offset", dongle)
 
@@ -324,10 +387,15 @@ class ArtifactTest(unittest.TestCase):
             with self.subTest(role):
                 self.assertIsNotNone(body)
                 values = [int(v, 0) for v in re.findall(r"0x[0-9a-f]+|\b\d+\b", body.group(1))]
-                self.assertEqual(sorted(values), sorted(spec.TRANSFORM))
+                expected = (
+                    spec.KEYBOARD_TRANSFORM
+                    if role in ("left", "right")
+                    else spec.TRANSFORM
+                )
+                self.assertEqual(sorted(values), sorted(expected))
 
     def test_scanner_and_recovery_code_are_linked_into_halves(self):
-        for role in self.HALVES:
+        for role in self.PERIPHERALS:
             mapfile = (role_dir(role) / "zmk.map").read_text(errors="replace")
             for obj in ("kscan_pca9555.c.obj", "cdc_1200_touch.c.obj"):
                 with self.subTest(f"{role} {obj}"):
@@ -336,14 +404,14 @@ class ArtifactTest(unittest.TestCase):
     def test_layer_indicator_is_linked_only_into_dongle(self):
         dongle_map = (role_dir("dongle") / "zmk.map").read_text(errors="replace")
         self.assertIn("layer_led_indicator.c.obj", dongle_map)
-        for role in self.HALVES:
+        for role in self.PERIPHERALS:
             half_map = (role_dir(role) / "zmk.map").read_text(errors="replace")
             with self.subTest(role):
                 self.assertNotIn("layer_led_indicator.c.obj", half_map)
 
     def test_half_uf2_targets_the_nrf52833_family(self):
         NRF52833_FAMILY = 0x621E937A
-        for role in self.HALVES:
+        for role in self.PERIPHERALS:
             for block in uf2_blocks(role_dir(role) / "zmk.uf2"):
                 with self.subTest(role):
                     self.assertTrue(block["flags"] & UF2_FLAG_FAMILY_ID)
@@ -351,14 +419,14 @@ class ArtifactTest(unittest.TestCase):
                 break
 
     def test_expanders_are_at_the_published_addresses(self):
-        for role in self.HALVES:
+        for role in self.PERIPHERALS:
             text = (role_dir(role) / "zephyr.dts").read_text()
             found = sorted(int(a, 16) for a in re.findall(r"keys@(\w+) \{", text))
             with self.subTest(role):
                 self.assertEqual(found, sorted(spec.EXPANDER_ADDRESSES.values()))
 
     def test_half_images_leave_headroom_in_the_slot(self):
-        for role in self.HALVES:
+        for role in self.PERIPHERALS:
             size = (role_dir(role) / "zmk.bin").stat().st_size
             with self.subTest(role):
                 self.assertLess(size, CODE_SIZE)

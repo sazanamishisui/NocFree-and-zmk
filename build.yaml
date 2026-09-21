@@ -19,6 +19,17 @@ include:
       -DCONFIG_ZMK_SPLIT=y
       -DCONFIG_ZMK_SPLIT_ROLE_CENTRAL=n
 
+  - board: nocfree_and_pad/nrf52833/zmk
+    artifact-name: nocfree_and_pad_peripheral
+    cmake-args: >-
+      -DCONFIG_ZMK_SPLIT=y
+      -DCONFIG_ZMK_SPLIT_ROLE_CENTRAL=n
+      -DCONFIG_ZMK_USB=n
+      -DCONFIG_USB_DEVICE_STACK=y
+      -DCONFIG_USB_DEVICE_INITIALIZE_AT_BOOT=y
+      -DCONFIG_ZMK_SPLIT_BLE_PERIPHERAL_POSITION_QUEUE_SIZE=32
+      -DKEYMAP_FILE=${GITHUB_WORKSPACE}/boards/nocfree/nocfree_and/nocfree_and_pad.keymap
+
   # USB-powered dongle is the only split central and owns the keymap/layers.
   - board: xiao_ble//zmk
     shield: nocfree_and_dongle
@@ -29,7 +40,9 @@ include:
       -DCONFIG_ZMK_STUDIO_LOCKING=n
       -DKEYMAP_FILE=${GITHUB_WORKSPACE}/boards/shields/nocfree_and/nocfree_and_dongle.keymap
 
-  # Pairing data must be cleared on all three devices before switching topology.
+  # Recovery images are provided for every device. Existing left/right bonds
+  # should normally be preserved when adding the Pad; reset only if pairing
+  # does not converge.
   - board: nocfree_and_left/nrf52833/zmk
     shield: settings_reset
     artifact-name: nocfree_and_left_settings_reset
@@ -37,6 +50,12 @@ include:
   - board: nocfree_and_right/nrf52833/zmk
     shield: settings_reset
     artifact-name: nocfree_and_right_settings_reset
+
+  - board: nocfree_and_pad/nrf52833/zmk
+    shield: settings_reset
+    artifact-name: nocfree_and_pad_settings_reset
+    cmake-args: >-
+      -DKEYMAP_FILE=${GITHUB_WORKSPACE}/boards/nocfree/nocfree_and/nocfree_and_pad.keymap
 
   - board: xiao_ble//zmk
     shield: settings_reset

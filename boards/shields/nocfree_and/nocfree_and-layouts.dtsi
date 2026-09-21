@@ -107,6 +107,34 @@
             , <&key_physical_attrs 100 100 1560 525 0 0 0>
             , <&key_physical_attrs 100 100 1665 525 0 0 0>
             , <&key_physical_attrs 100 100 1770 525 0 0 0>
+
+            /* NocFree Pad, placed to the right of the split keyboard. */
+            , <&key_physical_attrs 100 100 2050   0 0 0 0>
+            , <&key_physical_attrs 100 100 2155   0 0 0 0>
+            , <&key_physical_attrs 100 100 2260   0 0 0 0>
+            , <&key_physical_attrs 100 100 2365   0 0 0 0>
+
+            , <&key_physical_attrs 100 100 2050 105 0 0 0>
+            , <&key_physical_attrs 100 100 2155 105 0 0 0>
+            , <&key_physical_attrs 100 100 2260 105 0 0 0>
+            , <&key_physical_attrs 100 100 2365 105 0 0 0>
+
+            , <&key_physical_attrs 100 100 2050 210 0 0 0>
+            , <&key_physical_attrs 100 100 2155 210 0 0 0>
+            , <&key_physical_attrs 100 100 2260 210 0 0 0>
+            , <&key_physical_attrs 100 205 2365 210 0 0 0>
+
+            , <&key_physical_attrs 100 100 2050 315 0 0 0>
+            , <&key_physical_attrs 100 100 2155 315 0 0 0>
+            , <&key_physical_attrs 100 100 2260 315 0 0 0>
+
+            , <&key_physical_attrs 100 100 2050 420 0 0 0>
+            , <&key_physical_attrs 100 100 2155 420 0 0 0>
+            , <&key_physical_attrs 100 100 2260 420 0 0 0>
+            , <&key_physical_attrs 100 205 2365 420 0 0 0>
+
+            , <&key_physical_attrs 205 100 2050 525 0 0 0>
+            , <&key_physical_attrs 100 100 2260 525 0 0 0>
             ;
     };
 };

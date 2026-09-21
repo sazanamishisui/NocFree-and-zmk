@@ -29,9 +29,16 @@ RIGHT_COUNTS = [8, 8, 8, 8, 8, 8]
 
 LEFT_KEYS = sum(LEFT_COUNTS)    # 37
 RIGHT_KEYS = sum(RIGHT_COUNTS)  # 48
-TOTAL_KEYS = LEFT_KEYS + RIGHT_KEYS  # 85
+
+# NocFree Pad rows from the NocFreeLink layout and factory scanner order.
+PAD_COUNTS = [4, 4, 4, 3, 4, 2]
+PAD_KEYS = sum(PAD_COUNTS)  # 21
+
+KEYBOARD_KEYS = LEFT_KEYS + RIGHT_KEYS  # 85
+TOTAL_KEYS = KEYBOARD_KEYS + PAD_KEYS  # 106
 
 RIGHT_COL_OFFSET = LEFT_KEYS
+PAD_COL_OFFSET = KEYBOARD_KEYS
 
 # All sixteen pins of a PCA9555.
 ALL_BITS = set(range(16))
@@ -47,6 +54,7 @@ def key_inputs(counts: list[int]) -> list[tuple[str, int]]:
 
 LEFT_INPUTS = key_inputs(LEFT_COUNTS)
 RIGHT_INPUTS = key_inputs(RIGHT_COUNTS)
+PAD_INPUTS = key_inputs(PAD_COUNTS)
 
 
 def unused_bits(counts: list[int]) -> dict[str, set[int]]:
@@ -59,6 +67,7 @@ def unused_bits(counts: list[int]) -> dict[str, set[int]]:
 
 LEFT_UNUSED = unused_bits(LEFT_COUNTS)
 RIGHT_UNUSED = unused_bits(RIGHT_COUNTS)
+PAD_UNUSED = unused_bits(PAD_COUNTS)
 
 
 def transform_positions() -> list[int]:
@@ -73,7 +82,8 @@ def transform_positions() -> list[int]:
     return out
 
 
-TRANSFORM = transform_positions()
+KEYBOARD_TRANSFORM = transform_positions()
+TRANSFORM = KEYBOARD_TRANSFORM + list(range(PAD_COL_OFFSET, TOTAL_KEYS))
 
 # The default layer, in the same visual order as TRANSFORM. Row boundaries
 # follow LEFT_COUNTS/RIGHT_COUNTS.
@@ -102,6 +112,15 @@ DEFAULT_LAYER = [
     "kp LCTRL", "kp LGUI", "kp LALT", "lt 1 INT_MUHENKAN", "kp SPACE",
     "kp SPACE", "kp INT_HENKAN", "kp RALT", "mo 1", "kp RCTRL", "kp LEFT", "kp DOWN", "kp RIGHT",
 
+]
+
+PAD_DEFAULT_LAYER = [
+    "kp KP_NUMLOCK", "kp F3", "kp F4", "kp F7",
+    "kp ESC", "kp KP_DIVIDE", "kp KP_MULTIPLY", "kp KP_MINUS",
+    "kp KP_N7", "kp KP_N8", "kp KP_N9", "kp KP_PLUS",
+    "kp KP_N4", "kp KP_N5", "kp KP_N6",
+    "kp KP_N1", "kp KP_N2", "kp KP_N3", "kp KP_ENTER",
+    "kp KP_N0", "kp KP_DOT",
 ]
 
 # Flash geometry, from the two public Adafruit linker scripts. See

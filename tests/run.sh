@@ -12,9 +12,9 @@ OUT="$(mktemp -d)"
 trap 'rm -rf "${OUT}"' EXIT
 
 # Resolve and validate the optional built-artifact directory before unittest
-# changes the working directory. Dongle mode requires all three build trees.
+# changes the working directory. Dongle mode requires all four build trees.
 if [ -n "${NOCFREE_BUILD_DIR:-}" ]; then
-    for role in left right dongle; do
+    for role in left right pad dongle; do
         if [ ! -f "${NOCFREE_BUILD_DIR}/${role}/zephyr/.config" ]; then
             echo "NOCFREE_BUILD_DIR=${NOCFREE_BUILD_DIR} has no ${role}/zephyr/.config" >&2
             exit 1

@@ -1,4 +1,4 @@
-# NocFree & JIS — ZMK USB Dongle prototype v0.5.0
+# NocFree & JIS + Pad — ZMK USB Dongle prototype v0.6.0
 
 This patch is intended to be applied on top of:
 
@@ -14,6 +14,7 @@ central, host USB HID, ZMK Studio, and layer state to a dedicated USB dongle.
 ```text
 NocFree Left  nRF52833 -- BLE peripheral --                                           +-- XIAO nRF52840 -- USB HID -- PC
 NocFree Right nRF52833 -- BLE peripheral --/
+NocFree Pad   nRF52833 -- BLE peripheral --/
 ```
 
 The NocFree halves continue to use their existing PCA9555 scanner and ZMK
@@ -25,7 +26,30 @@ Seeed Studio XIAO nRF52840 / XIAO BLE, built as `xiao_ble//zmk`.
 
 The dongle has no keyboard matrix of its own. `nocfree_and_dongle.overlay`
 therefore uses `zmk,kscan-mock` and copies the exact 85-position JIS matrix
-transform and physical layout from the JIS branch.
+transform and extends its physical layout from 85 to 106 positions for the
+21-key NocFree Pad.
+
+## NocFree Pad integration in v0.6.0
+
+The Pad is a third BLE split peripheral. It uses the same nRF52833, I2C pins,
+three PCA9555 addresses, protected flash layout, debounce values and
+1200-baud recovery path as the keyboard halves. The scanner declares only the
+21 populated inputs, in six physical rows of 4, 4, 4, 3, 4 and 2 keys.
+
+Keyboard positions 0-84 are unchanged. Pad positions are appended at 85-105,
+so existing JIS bindings and the v0.3.3 output-switch listener retain their
+position numbers. ZMK Studio displays the Pad to the right of the keyboard and
+can edit its bindings on every exposed layer.
+
+The dongle now reserves three split-peripheral bonds plus the existing five
+host profiles (`BT_MAX_PAIRED=8`). This does not convert the Pad into an
+independent host keyboard: all three input devices still depend on the XIAO
+central.
+
+The factory Pad firmware version cannot be identified reliably from
+NocFreeLink when another NocFree device has a newer version. The saved UF2
+backup remains the rollback reference; updating the factory firmware only to
+obtain a version number is unnecessary.
 
 ## Layers
 
@@ -120,55 +144,72 @@ HID device.
 
 ## First build gate — do not flash before it is green
 
-1. Overlay these files onto the `v0.5-led-indicator` branch created from the
-   tested v0.4.1 source.
+1. Overlay these files onto the `v0.6-numpad-integration` branch created from
+   the released v0.5.0 source.
 2. Push to GitHub.
 3. Confirm **Validate sources**, **Firmware**, and **Verify built artifacts**
    all pass.
-4. Inspect the produced firmware ZIP for the three normal images and the three
-   settings-reset images.
+4. Inspect the produced firmware ZIP for these eight images:
+   - `nocfree_and_left_peripheral.uf2`
+   - `nocfree_and_right_peripheral.uf2`
+   - `nocfree_and_pad_peripheral.uf2`
+   - `nocfree_and_dongle.uf2`
+   - the corresponding four `settings_reset` images
 
-This bundle was statically checked, but it has **not** been compiled in this
-ChatGPT environment because the ZMK/Zephyr toolchain and Git dependencies are
-not available locally. GitHub Actions is therefore the first authoritative
-compile test.
+The source checks pass locally, but this environment does not contain the
+ZMK/Zephyr build toolchain. GitHub Actions remains the authoritative compile,
+link, devicetree and UF2-boundary test.
 
-For an existing working v0.4.1 installation, flash only
-`nocfree_and_dongle.uf2` to the XIAO. Do not flash a settings-reset image and
-do not rewrite either keyboard half; the pairing and Studio settings should
-remain intact.
+## First Pad test after CI passes
 
-## Pairing / flashing order after CI passes
+Preserve the already-working left/right bonds on the first attempt:
 
-Changing from left-central to dongle-central changes the split bonding graph.
-Old settings must not be reused.
+1. Keep v0.5.0 and all factory UF2 backups available.
+2. Flash `nocfree_and_dongle.uf2` to the XIAO. Do not use its settings-reset
+   image yet.
+3. On the Pad, hold the physical top-left and top-right keys together for
+   about five seconds to open its UF2 drive.
+4. Flash `nocfree_and_pad_settings_reset.uf2` to the Pad.
+5. The factory five-second chord is no longer active while the reset image is
+   running. Use the same 1200-baud serial recovery already verified on the
+   keyboard halves to reopen the Pad UF2 drive, then flash
+   `nocfree_and_pad_peripheral.uf2`.
+6. Power-cycle the Pad, then reconnect the XIAO. Leave the two keyboard halves
+   unchanged.
+7. Test all 21 Pad keys before opening Studio. The expected Base order is:
+   Num Lock/F3/F4/F7; Esc/divide/multiply/minus; 7/8/9/plus; 4/5/6;
+   1/2/3/Enter; 0/decimal.
 
-1. Keep the original working firmware files available for rollback.
-2. Flash the generated `settings_reset` image to **left**, **right**, and
-   **dongle**, one device at a time.
-3. Flash `nocfree_and_left_peripheral` to the left half.
-4. Flash `nocfree_and_right_peripheral` to the right half.
-5. Flash `nocfree_and_dongle` to the XIAO nRF52840.
-6. Power-cycle/reset all three devices. If split pairing is slow, reset the
-   dongle and both halves close together.
-7. Connect the dongle to the PC by USB and verify basic Base/Fn input before
-   opening ZMK Studio.
+If the Pad does not join, do not immediately erase all devices. First repeat
+the Pad settings-reset and normal image. Resetting the XIAO erases its existing
+left/right split bonds; if that becomes necessary, reset and reflash all three
+peripherals together before testing again.
 
 ## Initial acceptance tests
 
-Do not judge v0.1 by features. Judge it by stability first:
+Judge the first v0.6.0 test by stability and correct key mapping first:
 
-- Every physical key produces exactly one press and one release.
+- Every keyboard and Pad key produces exactly one press and one release.
 - No repeated characters during sustained normal typing.
 - No phantom key when pressing common 2/3/4-key combinations.
 - Turn right half off/on: left remains usable and right reconnects.
 - Turn left half off/on: right reconnects independently through dongle.
+- Turn Pad off/on: both keyboard halves remain usable and Pad reconnects.
+- Hold a keyboard modifier while pressing Pad keys to verify concurrent input.
 - Sleep both halves, then test first-key wake repeatedly.
 - Unplug/replug the USB dongle and reboot the PC.
 - Run prolonged typing before assigning macros or advanced layers.
 
 ## Rollback
 
-The original board definitions are intentionally left intact. To return to the
-existing JIS left-central firmware, restore the original `build.yaml`, reset
-settings on both halves, and flash the original left/right images.
+To return only the Pad to factory firmware while ZMK is running, use its
+1200-baud serial recovery to enter the UF2 drive and copy the saved Pad
+`CURRENT.UF2`. After the factory firmware is restored, its top-left +
+top-right five-second chord becomes available again. The backup covers the
+SoftDevice and application regions used for normal rollback; the preserved
+UF2 bootloader is not overwritten by this ZMK build.
+
+To return the complete keyboard to the original topology, retain the existing
+v0.5.0 release and the previously saved factory left/right/dongle images. Avoid
+using any settings-reset image unless its corresponding normal image and
+rollback file are already available.

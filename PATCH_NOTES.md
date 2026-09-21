@@ -1,4 +1,28 @@
-# v0.5.0 patch contents
+# v0.6.0 patch contents
+
+## Changes in v0.6.0
+
+- Added `nocfree_and_pad/nrf52833/zmk` as a third BLE split peripheral.
+- Reused the proven nRF52833 flash protection, CDC 1200-baud recovery,
+  internal-RC clock, 1M-PHY link margin and PCA9555 scanner configuration.
+- Declared the Pad's 21 populated PCA9555 inputs as six rows containing
+  4, 4, 4, 3, 4 and 2 keys; unpopulated expander bits remain excluded.
+- Preserved all keyboard positions 0-84 and appended Pad positions 85-105.
+- Expanded the dongle transform, physical Studio layout and all six keymap
+  layers from 85 to 106 positions.
+- Added the factory-equivalent Pad Base bindings: Num Lock/F3/F4/F7,
+  Esc/divide/multiply/minus, 7/8/9/plus, 4/5/6, 1/2/3/Enter and 0/decimal.
+- Increased the dongle split count from two to three peripherals and reserved
+  eight bonds: three split devices plus five host profiles.
+- Added normal and settings-reset Pad images. The Firmware ZIP should now
+  contain four normal images and four settings-reset images.
+- Documented that the factory top-left + top-right DFU chord is available only
+  before ZMK is flashed; subsequent DFU entry uses the retained 1200-baud CDC
+  recovery path.
+- Extended source and built-artifact checks to the Pad key map, transform,
+  flash boundaries, nRF52833 UF2 family, recovery code and BLE role.
+- Left the stable left/right scanners, debounce values, Bluetooth output
+  switcher and XIAO RGB indicator unchanged.
 
 ## Changes in v0.5.0
 
@@ -81,26 +105,44 @@ v0.2, v0.2.1, and v0.2.2 all confirmed that `BT_SEL` worked while the queued
 `OUT_BLE` action did not reliably change the selected transport. v0.3.0 no
 longer uses a macro for this operation.
 
-Apply these complete files over the current `v0.5-led-indicator` branch.
+Apply these complete files over the `v0.6-numpad-integration` branch created
+from the released v0.5.0 source.
 
 ## Replaced files
 
-- `CMakeLists.txt`
+- `.github/workflows/build.yml`
+- `build.yaml`
+- `boards/nocfree/nocfree_and/board.yml`
+- `boards/nocfree/nocfree_and/nocfree_and.zmk.yml`
+- `boards/nocfree/nocfree_and/Kconfig.defconfig`
+- `boards/nocfree/nocfree_and/Kconfig.nocfree_and_pad`
+- `boards/nocfree/nocfree_and/nocfree_and_pad.keymap`
+- `boards/nocfree/nocfree_and/nocfree_and_pad_nrf52833_zmk.dts`
+- `boards/nocfree/nocfree_and/nocfree_and_pad_nrf52833_zmk_defconfig`
+- `boards/shields/nocfree_and/Kconfig.defconfig`
+- `boards/shields/nocfree_and/nocfree_and-layouts.dtsi`
+- `boards/shields/nocfree_and/nocfree_and_dongle.overlay`
+- `boards/shields/nocfree_and/nocfree_and_dongle.keymap`
+- `tests/ansi_spec.py`
+- `tests/run.sh`
+- `tests/test_board_definition.py`
 - `tests/test_artifacts.py`
 - `README_DONGLE.md`
 - `PATCH_NOTES.md`
-- `src/layer_led_indicator.c`
 
 ## Existing supporting files (may remain in the repository)
 
 - `dts/bindings/behaviors/nocfree,behavior-bt-output.yaml`
 - `src/behavior_bt_output.c`
-- `boards/shields/nocfree_and/nocfree_and_dongle.keymap`
+- `src/layer_led_indicator.c`
+- `CMakeLists.txt`
 
 ## Intentionally unchanged
 
 - `boards/nocfree/nocfree_and/nocfree_and_left_nrf52833_zmk.dts`
 - `boards/nocfree/nocfree_and/nocfree_and_right_nrf52833_zmk.dts`
+- `boards/nocfree/nocfree_and/nocfree_and_left_nrf52833_zmk_defconfig`
+- `boards/nocfree/nocfree_and/nocfree_and_right_nrf52833_zmk_defconfig`
 - `drivers/kscan/kscan_pca9555.c`
 - NocFree debounce values
 - JIS 85-key physical mapping on the two keyboard halves

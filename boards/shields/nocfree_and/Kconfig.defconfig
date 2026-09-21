@@ -11,15 +11,15 @@ config ZMK_SPLIT_ROLE_CENTRAL
 config ZMK_SPLIT
     default y
 
-# Left and right NocFree halves both connect directly to the dongle.
+# Left, right and NocFree Pad all connect directly to the dongle.
 config ZMK_SPLIT_BLE_CENTRAL_PERIPHERALS
-    default 2
+    default 3
 
-# Two split peripherals + the usual five host Bluetooth profiles.
+# Three split peripherals + the usual five host Bluetooth profiles.
 config BT_MAX_CONN
-    default 7
+    default 8
 
 config BT_MAX_PAIRED
-    default 7
+    default 8
 
 endif

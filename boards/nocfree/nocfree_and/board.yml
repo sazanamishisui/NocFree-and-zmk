@@ -13,3 +13,9 @@ boards:
       - name: nrf52833
         variants:
           - name: zmk
+  - name: nocfree_and_pad
+    vendor: nocfree
+    socs:
+      - name: nrf52833
+        variants:
+          - name: zmk
