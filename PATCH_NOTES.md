@@ -1,5 +1,13 @@
 # v0.3.0 patch contents
 
+## Changes in v0.3.2
+
+- Replaced connection-state polling with one non-blocking 750 ms delayed BLE
+  output request. The v0.3.1 polling path did not change output in field tests
+  even when the selected phone was already connected.
+- The delayed callback invokes the same endpoint API used by ZMK's `OUT_BLE`.
+- `Fn+U` still cancels a pending switch before selecting USB.
+
 ## Changes in v0.3.1
 
 - `Fn+1` through `Fn+5` select a Bluetooth profile, then poll its connection

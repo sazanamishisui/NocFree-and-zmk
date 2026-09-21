@@ -3,9 +3,9 @@
  *
  * SPDX-License-Identifier: MIT
  *
- * Select a Bluetooth host profile, wait until that profile is connected, and
- * then switch output to BLE. Parameter ZMK_BLE_PROFILE_COUNT selects USB and
- * cancels any pending BLE switch.
+ * Select a Bluetooth host profile and switch output to BLE after a short,
+ * non-blocking delay. Parameter ZMK_BLE_PROFILE_COUNT selects USB and cancels
+ * any pending BLE switch.
  */
 
 #define DT_DRV_COMPAT nocfree_behavior_bt_output
@@ -23,15 +23,14 @@
 #include <zmk/ble.h>
 #include <zmk/endpoints.h>
 
-#define BLE_OUTPUT_POLL_INTERVAL_MS 100
-#define BLE_OUTPUT_TIMEOUT_MS 5000
-#define BLE_OUTPUT_MAX_POLLS (BLE_OUTPUT_TIMEOUT_MS / BLE_OUTPUT_POLL_INTERVAL_MS)
+#define BLE_OUTPUT_SWITCH_DELAY_MS 750
 #define USB_OUTPUT_PARAM ZMK_BLE_PROFILE_COUNT
 
-static struct k_work_delayable ble_output_work;
 static bool ble_output_pending;
 static uint8_t pending_profile;
-static uint8_t polls_remaining;
+
+static void ble_output_work_handler(struct k_work *work);
+K_WORK_DELAYABLE_DEFINE(ble_output_work, ble_output_work_handler);
 
 #if IS_ENABLED(CONFIG_ZMK_BEHAVIOR_METADATA)
 static const struct behavior_parameter_value_metadata profile_values[] = {
@@ -96,26 +95,8 @@ static void ble_output_work_handler(struct k_work *work) {
         return;
     }
 
-    if (zmk_ble_active_profile_is_connected()) {
-        ble_output_pending = false;
-        (void)zmk_endpoint_set_preferred_transport(ZMK_TRANSPORT_BLE);
-        return;
-    }
-
-    if (polls_remaining == 0) {
-        /* USB remains preferred when the requested host is unavailable. */
-        ble_output_pending = false;
-        return;
-    }
-
-    polls_remaining--;
-    (void)k_work_reschedule(&ble_output_work, K_MSEC(BLE_OUTPUT_POLL_INTERVAL_MS));
-}
-
-static int behavior_bt_output_init(const struct device *device) {
-    (void)device;
-    k_work_init_delayable(&ble_output_work, ble_output_work_handler);
-    return 0;
+    ble_output_pending = false;
+    (void)zmk_endpoint_set_preferred_transport(ZMK_TRANSPORT_BLE);
 }
 
 static int on_keymap_binding_pressed(struct zmk_behavior_binding *binding,
@@ -149,14 +130,8 @@ static int on_keymap_binding_pressed(struct zmk_behavior_binding *binding,
     }
 
     pending_profile = binding->param1;
-
-    if (zmk_ble_active_profile_is_connected()) {
-        return zmk_endpoint_set_preferred_transport(ZMK_TRANSPORT_BLE);
-    }
-
-    polls_remaining = BLE_OUTPUT_MAX_POLLS;
     ble_output_pending = true;
-    (void)k_work_reschedule(&ble_output_work, K_MSEC(BLE_OUTPUT_POLL_INTERVAL_MS));
+    (void)k_work_reschedule(&ble_output_work, K_MSEC(BLE_OUTPUT_SWITCH_DELAY_MS));
     return ZMK_BEHAVIOR_OPAQUE;
 }
 
@@ -175,7 +150,7 @@ static const struct behavior_driver_api behavior_bt_output_driver_api = {
 #endif
 };
 
-BEHAVIOR_DT_INST_DEFINE(0, behavior_bt_output_init, NULL, NULL, NULL, POST_KERNEL,
+BEHAVIOR_DT_INST_DEFINE(0, NULL, NULL, NULL, NULL, POST_KERNEL,
                         CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
                         &behavior_bt_output_driver_api);
 

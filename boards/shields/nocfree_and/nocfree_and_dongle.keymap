@@ -13,8 +13,8 @@
 / {
     behaviors {
         /*
-         * Parameters 0-4 select a BLE profile and switch output only after
-         * that profile connects. Parameter 5 cancels a pending BLE switch and
+         * Parameters 0-4 select a BLE profile and switch output after a short
+         * non-blocking delay. Parameter 5 cancels a pending BLE switch and
          * selects USB.
          */
         bt_out: bt_output {

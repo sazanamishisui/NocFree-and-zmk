@@ -43,9 +43,10 @@ class SourceConfigurationTest(unittest.TestCase):
         self.assertIn("&bt_out 5", text)
 
         source = (ROOT / "src" / "behavior_bt_output.c").read_text()
-        self.assertIn("zmk_ble_active_profile_is_connected", source)
+        self.assertNotIn("zmk_ble_active_profile_is_connected", source)
+        self.assertIn("K_WORK_DELAYABLE_DEFINE", source)
         self.assertIn("k_work_reschedule", source)
-        self.assertIn("BLE_OUTPUT_TIMEOUT_MS 5000", source)
+        self.assertIn("BLE_OUTPUT_SWITCH_DELAY_MS 750", source)
         self.assertIn("cancel_pending_ble_output", source)
         self.assertIn("binding->param1 == USB_OUTPUT_PARAM", source)
         self.assertIn("ZMK_TRANSPORT_BLE", source)
