@@ -1,4 +1,6 @@
 /*
+ * Copyright (c) 2026 The NocFree ZMK Contributors
+ *
  * SPDX-License-Identifier: MIT
  *
  * Select a Bluetooth host profile and prefer BLE output atomically from the
