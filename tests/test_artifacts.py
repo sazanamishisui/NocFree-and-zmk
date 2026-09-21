@@ -30,6 +30,8 @@ CODE_START, CODE_SIZE = spec.PARTITIONS["code_partition"]
 CODE_END = CODE_START + CODE_SIZE
 
 KEYMAP = ROOT / "boards" / "shields" / "nocfree_and" / "nocfree_and_dongle.keymap"
+BUILD_MATRIX = ROOT / "build.yaml"
+WORKFLOW = ROOT / ".github" / "workflows" / "build.yml"
 
 
 class SourceConfigurationTest(unittest.TestCase):
@@ -77,6 +79,14 @@ class SourceConfigurationTest(unittest.TestCase):
         self.assertIn("&trans &trans &tog 4 &trans &trans &trans", text)
         self.assertIn("&tog 2 &tog 3 &trans &trans", text)
         self.assertGreaterEqual(text.count("&to 0 &trans"), 3)
+
+    def test_dongle_build_explicitly_selects_its_keymap(self):
+        expected = (
+            "-DKEYMAP_FILE=${GITHUB_WORKSPACE}/boards/shields/"
+            "nocfree_and/nocfree_and_dongle.keymap"
+        )
+        self.assertIn(expected, BUILD_MATRIX.read_text())
+        self.assertIn(expected.replace("=", '=\"', 1) + '\"', WORKFLOW.read_text())
 
 
 def role_dir(role: str) -> Path:
@@ -247,6 +257,12 @@ class ArtifactTest(unittest.TestCase):
     def test_compiled_devicetree_has_the_exact_key_map(self):
         self.assertEqual(self.compiled_key_inputs("left"), spec.LEFT_INPUTS)
         self.assertEqual(self.compiled_key_inputs("right"), spec.RIGHT_INPUTS)
+
+    def test_dongle_compiles_all_studio_editable_layers(self):
+        text = (role_dir("dongle") / "zephyr.dts").read_text()
+        for display_name in ("Base", "Fn", "Nav", "Numpad", "Work"):
+            with self.subTest(display_name):
+                self.assertIn(f'display-name = "{display_name}";', text)
 
     def test_compiled_devicetree_excludes_unpopulated_bits(self):
         for role, unused in (("left", spec.LEFT_UNUSED), ("right", spec.RIGHT_UNUSED)):

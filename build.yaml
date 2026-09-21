@@ -27,6 +27,7 @@ include:
     cmake-args: >-
       -DCONFIG_ZMK_STUDIO=y
       -DCONFIG_ZMK_STUDIO_LOCKING=n
+      -DKEYMAP_FILE=${GITHUB_WORKSPACE}/boards/shields/nocfree_and/nocfree_and_dongle.keymap
 
   # Pairing data must be cleared on all three devices before switching topology.
   - board: nocfree_and_left/nrf52833/zmk

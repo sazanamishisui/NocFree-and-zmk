@@ -65,7 +65,7 @@ v0.3.3 observes the physical Fn profile keys independently of Studio's dynamic
 binding, schedules the same 750 ms output request, and keeps `Fn+U` as the
 explicit recovery and cancellation path.
 
-## Editable layers in v0.4.0
+## Editable layers in v0.4.1
 
 ZMK Studio exposes three initially transparent layers for user editing:
 
@@ -79,6 +79,11 @@ three editable layers for an emergency return to Base. Keep each layer's `Esc`
 binding unchanged while experimenting in Studio. `Fn+1` through `Fn+5` and
 `Fn+U` remain reserved for host-output selection and should not be moved in
 Studio while the v0.3.3 position-event output router is in use.
+
+The dongle build explicitly supplies this shield keymap through CMake's
+`KEYMAP_FILE`. This prevents the original two-layer NocFree config keymap from
+silently taking priority. Artifact verification also checks the compiled
+devicetree for all five editable layer names.
 
 ## Important topology change
 

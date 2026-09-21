@@ -1,4 +1,14 @@
-# v0.4.0 patch contents
+# v0.4.1 patch contents
+
+## Changes in v0.4.1
+
+- Explicitly passes the dongle shield keymap through `KEYMAP_FILE` in both the
+  firmware matrix and the artifact-verification build.
+- This fixes the field-observed case where the two-layer
+  `config/nocfree_and.keymap` took priority over the dongle's five editable
+  layers.
+- Added a built-devicetree test requiring Base, Fn, Nav, Numpad, and Work in
+  the actual dongle image, preventing another source-versus-build mismatch.
 
 ## Changes in v0.4.0
 
