@@ -12,4 +12,5 @@ zephyr_library_sources_ifdef(CONFIG_NOCFREE_RECOVERY_CDC_1200_TOUCH
 if(CONFIG_SHIELD_NOCFREE_AND_DONGLE)
   zephyr_library_include_directories(${APPLICATION_SOURCE_DIR}/include)
   zephyr_library_sources(src/behavior_bt_output.c)
+  zephyr_library_sources(src/layer_led_indicator.c)
 endif()

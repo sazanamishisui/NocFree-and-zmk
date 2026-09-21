@@ -65,6 +65,29 @@ class SourceConfigurationTest(unittest.TestCase):
         self.assertIn("${APPLICATION_SOURCE_DIR}/include", cmake)
         self.assertIn("src/behavior_bt_output.c", cmake)
 
+    def test_xiao_rgb_layer_indicator_is_dongle_only(self):
+        source = (ROOT / "src" / "layer_led_indicator.c").read_text()
+        self.assertIn("GPIO_DT_SPEC_GET(DT_ALIAS(led0), gpios)", source)
+        self.assertIn("GPIO_DT_SPEC_GET(DT_ALIAS(led1), gpios)", source)
+        self.assertIn("GPIO_DT_SPEC_GET(DT_ALIAS(led2), gpios)", source)
+        self.assertIn("zmk_keymap_highest_layer_active()", source)
+        self.assertIn("zmk_keymap_layer_index_to_id(highest)", source)
+        self.assertIn("as_zmk_layer_state_changed", source)
+        self.assertIn("ZMK_SUBSCRIPTION", source)
+        self.assertIn("case FN_LAYER", source)
+        self.assertIn("case NAV_LAYER", source)
+        self.assertIn("case NUMPAD_LAYER", source)
+        self.assertIn("case WORK_LAYER", source)
+
+        cmake = (ROOT / "CMakeLists.txt").read_text()
+        dongle_block = re.search(
+            r"if\(CONFIG_SHIELD_NOCFREE_AND_DONGLE\)(.*?)endif\(\)",
+            cmake,
+            re.S,
+        )
+        self.assertIsNotNone(dongle_block)
+        self.assertIn("src/layer_led_indicator.c", dongle_block.group(1))
+
     def test_editable_studio_layers_and_toggle_keys_exist(self):
         text = KEYMAP.read_text()
         for layer in ("navigation_layer", "numpad_layer", "work_layer"):
@@ -309,6 +332,14 @@ class ArtifactTest(unittest.TestCase):
             for obj in ("kscan_pca9555.c.obj", "cdc_1200_touch.c.obj"):
                 with self.subTest(f"{role} {obj}"):
                     self.assertIn(obj, mapfile)
+
+    def test_layer_indicator_is_linked_only_into_dongle(self):
+        dongle_map = (role_dir("dongle") / "zmk.map").read_text(errors="replace")
+        self.assertIn("layer_led_indicator.c.obj", dongle_map)
+        for role in self.HALVES:
+            half_map = (role_dir(role) / "zmk.map").read_text(errors="replace")
+            with self.subTest(role):
+                self.assertNotIn("layer_led_indicator.c.obj", half_map)
 
     def test_half_uf2_targets_the_nrf52833_family(self):
         NRF52833_FAMILY = 0x621E937A

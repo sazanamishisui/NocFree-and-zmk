@@ -1,4 +1,4 @@
-# NocFree & JIS — ZMK USB Dongle prototype v0.3.2
+# NocFree & JIS — ZMK USB Dongle prototype v0.5.0
 
 This patch is intended to be applied on top of:
 
@@ -85,6 +85,27 @@ The dongle build explicitly supplies this shield keymap through CMake's
 silently taking priority. Artifact verification also checks the compiled
 devicetree for all five editable layer names.
 
+## XIAO RGB layer indicator in v0.5.0
+
+The XIAO nRF52840 dongle's onboard active-low RGB LED shows the highest active
+ZMK layer. This keeps layer indication on the USB-powered central and does not
+consume either keyboard half's battery.
+
+| Layer | LED |
+| --- | --- |
+| Base | Off |
+| Fn | Blue while Fn is held |
+| Nav | Green |
+| Numpad | Red |
+| Work | Purple (red + blue) |
+| Future or unexpected layer | White |
+
+The implementation uses the XIAO board's Zephyr devicetree LED aliases rather
+than hard-coded GPIO polarity. It is compiled only for
+`CONFIG_SHIELD_NOCFREE_AND_DONGLE`; the left and right firmware images are
+unchanged. Brightness control is intentionally deferred: v0.5.0 first tests
+whether the onboard LED is visible and comfortable in normal use.
+
 ## Important topology change
 
 The source branch defines the left half as split central. v0.1 does **not**
@@ -99,7 +120,8 @@ HID device.
 
 ## First build gate — do not flash before it is green
 
-1. Overlay these files onto a checkout/fork of the `jis-studio` branch.
+1. Overlay these files onto the `v0.5-led-indicator` branch created from the
+   tested v0.4.1 source.
 2. Push to GitHub.
 3. Confirm **Validate sources**, **Firmware**, and **Verify built artifacts**
    all pass.
@@ -110,6 +132,11 @@ This bundle was statically checked, but it has **not** been compiled in this
 ChatGPT environment because the ZMK/Zephyr toolchain and Git dependencies are
 not available locally. GitHub Actions is therefore the first authoritative
 compile test.
+
+For an existing working v0.4.1 installation, flash only
+`nocfree_and_dongle.uf2` to the XIAO. Do not flash a settings-reset image and
+do not rewrite either keyboard half; the pairing and Studio settings should
+remain intact.
 
 ## Pairing / flashing order after CI passes
 

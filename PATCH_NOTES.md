@@ -1,4 +1,19 @@
-# v0.4.1 patch contents
+# v0.5.0 patch contents
+
+## Changes in v0.5.0
+
+- Added a dongle-only layer indicator using the XIAO nRF52840 onboard RGB LED.
+- The indicator follows the highest active ZMK layer, including momentary Fn
+  and the three Studio-editable toggle layers.
+- Color map: Base off, Fn blue, Nav green, Numpad red, Work purple, and any
+  future or unexpected layer white.
+- Uses the Zephyr board's `led0`, `led1`, and `led2` devicetree aliases, so the
+  XIAO active-low LED wiring is handled by the GPIO API instead of hard-coded
+  polarity logic.
+- Added source and built-link-map checks. The new object must be present in the
+  dongle image and absent from both keyboard-half images.
+- Preserved the v0.3.3 USB/Bluetooth output router and v0.4.1 five-layer
+  keymap without modification.
 
 ## Changes in v0.4.1
 
@@ -66,20 +81,21 @@ v0.2, v0.2.1, and v0.2.2 all confirmed that `BT_SEL` worked while the queued
 `OUT_BLE` action did not reliably change the selected transport. v0.3.0 no
 longer uses a macro for this operation.
 
-Apply these complete files over the current `dongle` branch.
+Apply these complete files over the current `v0.5-led-indicator` branch.
 
 ## Replaced files
 
 - `CMakeLists.txt`
 - `tests/test_artifacts.py`
-- `boards/shields/nocfree_and/nocfree_and_dongle.keymap`
 - `README_DONGLE.md`
 - `PATCH_NOTES.md`
+- `src/layer_led_indicator.c`
 
 ## Existing supporting files (may remain in the repository)
 
 - `dts/bindings/behaviors/nocfree,behavior-bt-output.yaml`
 - `src/behavior_bt_output.c`
+- `boards/shields/nocfree_and/nocfree_and_dongle.keymap`
 
 ## Intentionally unchanged
 
