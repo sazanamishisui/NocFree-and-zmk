@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: MIT
+
+description: NocFree atomic Bluetooth profile and output selection behavior
+
+compatible: "nocfree,behavior-bt-output"
+
+include: one_param.yaml
