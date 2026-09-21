@@ -1,4 +1,18 @@
-# v0.3.3 patch contents
+# v0.4.0 patch contents
+
+## Changes in v0.4.0
+
+- Exposed the previously reserved `Nav`, `Numpad`, and `Work` layers to ZMK
+  Studio. Their initial bindings remain transparent, so enabling the layers
+  does not change normal typing until the user edits them.
+- Added tap-to-toggle access from the Fn layer:
+  - `Fn+N`: toggle Nav (layer 2)
+  - `Fn+M`: toggle Numpad (layer 3)
+  - `Fn+W`: toggle Work (layer 4)
+- Assigned `Esc` on each editable layer to `&to 0` as an emergency return to
+  Base. This prevents a Studio edit from leaving the user stuck on a layer.
+- Kept layer 5 hidden as `Reserved` for future expansion.
+- Preserved the v0.3.3 USB/Bluetooth output router without modification.
 
 ## Changes in v0.3.3
 

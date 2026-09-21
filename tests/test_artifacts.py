@@ -63,13 +63,20 @@ class SourceConfigurationTest(unittest.TestCase):
         self.assertIn("${APPLICATION_SOURCE_DIR}/include", cmake)
         self.assertIn("src/behavior_bt_output.c", cmake)
 
-    def test_extra_studio_layers_are_reserved(self):
+    def test_editable_studio_layers_and_toggle_keys_exist(self):
         text = KEYMAP.read_text()
-        for layer in ("navigation_layer", "numpad_layer", "work_layer", "reserved_layer"):
+        for layer in ("navigation_layer", "numpad_layer", "work_layer"):
             with self.subTest(layer=layer):
                 node = re.search(rf"{layer}\s*\{{(.*?)\n\s*\}};", text, re.S)
                 self.assertIsNotNone(node)
-                self.assertIn('status = "reserved";', node.group(1))
+                self.assertNotIn('status = "reserved";', node.group(1))
+
+        reserved = re.search(r"reserved_layer\s*\{(.*?)\n\s*\};", text, re.S)
+        self.assertIsNotNone(reserved)
+        self.assertIn('status = "reserved";', reserved.group(1))
+        self.assertIn("&trans &trans &tog 4 &trans &trans &trans", text)
+        self.assertIn("&tog 2 &tog 3 &trans &trans", text)
+        self.assertGreaterEqual(text.count("&to 0 &trans"), 3)
 
 
 def role_dir(role: str) -> Path:
