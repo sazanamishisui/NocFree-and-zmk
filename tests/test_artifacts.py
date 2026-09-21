@@ -34,18 +34,27 @@ BUILD_MATRIX = ROOT / "build.yaml"
 WORKFLOW = ROOT / ".github" / "workflows" / "build.yml"
 PAD_DTS = ROOT / "boards" / "nocfree" / "nocfree_and" / "nocfree_and_pad_nrf52833_zmk.dts"
 PAD_KEYMAP = ROOT / "boards" / "nocfree" / "nocfree_and" / "nocfree_and_pad.keymap"
+PAD_DIAG_KEYMAP = (
+    ROOT
+    / "boards"
+    / "nocfree"
+    / "nocfree_and"
+    / "pad_usb_diag.keymap"
+)
 
 
 class SourceConfigurationTest(unittest.TestCase):
     def test_pad_sources_and_build_entries_exist(self):
         self.assertTrue(PAD_DTS.is_file())
         self.assertTrue(PAD_KEYMAP.is_file())
+        self.assertTrue(PAD_DIAG_KEYMAP.is_file())
 
         matrix = BUILD_MATRIX.read_text()
         for artifact in (
             "nocfree_and_left_peripheral",
             "nocfree_and_right_peripheral",
             "nocfree_and_pad_peripheral",
+            "nocfree_and_pad_usb_diagnostic",
             "nocfree_and_dongle",
             "nocfree_and_left_settings_reset",
             "nocfree_and_right_settings_reset",
@@ -63,6 +72,13 @@ class SourceConfigurationTest(unittest.TestCase):
         bindings = re.search(r"bindings\s*=\s*<(.*?)>;", keymap, re.S)
         self.assertIsNotNone(bindings)
         self.assertEqual(len(re.findall(r"&\w+", bindings.group(1))), 106)
+
+        diagnostic = PAD_DIAG_KEYMAP.read_text()
+        diagnostic_bindings = re.search(r"bindings\s*=\s*<(.*?)>;", diagnostic, re.S)
+        self.assertIsNotNone(diagnostic_bindings)
+        self.assertEqual(len(re.findall(r"&\w+", diagnostic_bindings.group(1))), 106)
+        self.assertIn("&kp KP_NUMLOCK", diagnostic_bindings.group(1))
+        self.assertIn("&kp KP_ENTER", diagnostic_bindings.group(1))
 
     def test_ble_profile_keys_use_stock_bindings_and_event_router(self):
         text = KEYMAP.read_text()
@@ -162,6 +178,14 @@ class SourceConfigurationTest(unittest.TestCase):
         )
         self.assertIn('pad_keymap="${pad_keymap}nocfree_and_pad.keymap"', workflow)
         self.assertIn('-DKEYMAP_FILE="${pad_keymap}"', workflow)
+        self.assertIn(
+            "pad_usb_diag.keymap", BUILD_MATRIX.read_text()
+        )
+        self.assertIn(
+            'pad_diag_keymap="${pad_diag_keymap}pad_usb_diag.keymap"',
+            workflow,
+        )
+        self.assertIn('-DKEYMAP_FILE="${pad_diag_keymap}"', workflow)
 
 
 def role_dir(role: str) -> Path:
@@ -173,6 +197,10 @@ def available() -> bool:
         (role_dir(role) / ".config").is_file()
         for role in ("left", "right", "pad", "dongle")
     )
+
+
+def diagnostic_available() -> bool:
+    return (role_dir("pad_usb_diagnostic") / ".config").is_file()
 
 
 def kconfig(role: str) -> dict[str, str]:
@@ -435,6 +463,37 @@ class ArtifactTest(unittest.TestCase):
 
     def test_dongle_outputs_uf2(self):
         self.assertTrue((role_dir("dongle") / "zmk.uf2").is_file())
+
+
+@unittest.skipUnless(
+    diagnostic_available(), f"no Pad USB diagnostic build output under {BUILD}"
+)
+class PadUsbDiagnosticArtifactTest(unittest.TestCase):
+    def test_diagnostic_is_usb_only_and_keeps_recovery(self):
+        config = kconfig("pad_usb_diagnostic")
+        self.assertNotEqual(config.get("CONFIG_ZMK_SPLIT"), "y")
+        self.assertEqual(config.get("CONFIG_ZMK_USB"), "y")
+        self.assertNotEqual(config.get("CONFIG_ZMK_BLE"), "y")
+        self.assertEqual(config.get("CONFIG_USB_CDC_ACM"), "y")
+        self.assertEqual(config.get("CONFIG_NOCFREE_RECOVERY_CDC_1200_TOUCH"), "y")
+        self.assertEqual(config.get("CONFIG_NOCFREE_KSCAN_PCA9555"), "y")
+
+    def test_diagnostic_uf2_stays_inside_the_application_partition(self):
+        uf2 = role_dir("pad_usb_diagnostic") / "zmk.uf2"
+        self.assertTrue(uf2.is_file())
+        blocks = list(uf2_blocks(uf2))
+        self.assertGreater(len(blocks), 0)
+        for block in blocks:
+            self.assertGreaterEqual(block["address"], CODE_START)
+            self.assertLessEqual(block["address"] + block["payload"], CODE_END)
+            self.assertEqual(block["family"], 0x621E937A)
+
+    def test_diagnostic_links_scanner_and_recovery(self):
+        mapfile = (role_dir("pad_usb_diagnostic") / "zmk.map").read_text(
+            errors="replace"
+        )
+        self.assertIn("kscan_pca9555.c.obj", mapfile)
+        self.assertIn("cdc_1200_touch.c.obj", mapfile)
 
 
 if __name__ == "__main__":

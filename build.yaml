@@ -30,6 +30,17 @@ include:
       -DCONFIG_ZMK_SPLIT_BLE_PERIPHERAL_POSITION_QUEUE_SIZE=32
       -DKEYMAP_FILE=${GITHUB_WORKSPACE}/boards/nocfree/nocfree_and/nocfree_and_pad.keymap
 
+  # Temporary standalone USB-HID image used to separate Pad matrix/I2C faults
+  # from BLE split-pairing faults. It does not erase settings and is not a
+  # production image.
+  - board: nocfree_and_pad/nrf52833/zmk
+    artifact-name: nocfree_and_pad_usb_diagnostic
+    cmake-args: >-
+      -DCONFIG_ZMK_SPLIT=n
+      -DCONFIG_ZMK_USB=y
+      -DCONFIG_ZMK_BLE=n
+      -DKEYMAP_FILE=${GITHUB_WORKSPACE}/boards/nocfree/nocfree_and/pad_usb_diag.keymap
+
   # USB-powered dongle is the only split central and owns the keymap/layers.
   - board: xiao_ble//zmk
     shield: nocfree_and_dongle

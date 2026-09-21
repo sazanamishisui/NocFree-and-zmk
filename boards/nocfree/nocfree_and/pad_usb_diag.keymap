@@ -1,0 +1,42 @@
+/*
+ * SPDX-License-Identifier: MIT
+ *
+ * Temporary standalone USB-HID keymap for NocFree Pad hardware diagnosis.
+ *
+ * This image deliberately disables split/BLE operation and sends the Pad's
+ * PCA9555 key events directly over its USB-C connection.  It is not intended
+ * for daily use.  Positions 0-84 remain transparent because the Pad transform
+ * preserves the complete 106-position dongle keymap and appends its keys at
+ * positions 85-105.
+ */
+#include <behaviors.dtsi>
+#include <dt-bindings/zmk/keys.h>
+
+/ {
+    keymap {
+        compatible = "zmk,keymap";
+
+        default_layer {
+            bindings = <
+                /* Preserved NocFree & positions 0-84. */
+                &trans &trans &trans &trans &trans &trans &trans &trans &trans &trans
+                &trans &trans &trans &trans &trans &trans &trans &trans &trans &trans
+                &trans &trans &trans &trans &trans &trans &trans &trans &trans &trans
+                &trans &trans &trans &trans &trans &trans &trans &trans &trans &trans
+                &trans &trans &trans &trans &trans &trans &trans &trans &trans &trans
+                &trans &trans &trans &trans &trans &trans &trans &trans &trans &trans
+                &trans &trans &trans &trans &trans &trans &trans &trans &trans &trans
+                &trans &trans &trans &trans &trans &trans &trans &trans &trans &trans
+                &trans &trans &trans &trans &trans
+
+                /* NocFree Pad positions 85-105, in physical reading order. */
+                &kp KP_NUMLOCK &kp F3        &kp F4          &kp F7
+                &kp ESC        &kp KP_DIVIDE &kp KP_MULTIPLY &kp KP_MINUS
+                &kp KP_N7      &kp KP_N8     &kp KP_N9       &kp KP_PLUS
+                &kp KP_N4      &kp KP_N5     &kp KP_N6
+                &kp KP_N1      &kp KP_N2     &kp KP_N3       &kp KP_ENTER
+                &kp KP_N0      &kp KP_DOT
+            >;
+        };
+    };
+};
