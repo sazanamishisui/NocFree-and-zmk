@@ -124,7 +124,7 @@ jobs:
             -DCONFIG_ZMK_STUDIO=y \
             -DCONFIG_ZMK_STUDIO_LOCKING=n \
             -DCONFIG_ZMK_USB_LOGGING=y \
-            -DCONFIG_ZMK_LOG_LEVEL=3 \
+            -DCONFIG_ZMK_LOGGING_MINIMAL=y \
             -DCONFIG_NOCFREE_BATTERY_DIAGNOSTIC=y
 
       - name: Run the full suite against the build
