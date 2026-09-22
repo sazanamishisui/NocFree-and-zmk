@@ -82,9 +82,9 @@ class SourceConfigurationTest(unittest.TestCase):
         diagnostic = PAD_DIAG_KEYMAP.read_text()
         diagnostic_bindings = re.search(r"bindings\s*=\s*<(.*?)>;", diagnostic, re.S)
         self.assertIsNotNone(diagnostic_bindings)
-        self.assertEqual(len(re.findall(r"&\w+", diagnostic_bindings.group(1))), 106)
-        self.assertIn("&kp KP_NUMLOCK", diagnostic_bindings.group(1))
-        self.assertIn("&kp KP_ENTER", diagnostic_bindings.group(1))
+        self.assertEqual(len(re.findall(r"&kp\s+\w+", diagnostic_bindings.group(1))), 32)
+        self.assertIn("&kp A", diagnostic_bindings.group(1))
+        self.assertIn("&kp N6", diagnostic_bindings.group(1))
 
         overlay = PAD_DIAG_OVERLAY.read_text()
         self.assertIn("zephyr,console = &cdc_acm_uart0", overlay)
@@ -93,7 +93,6 @@ class SourceConfigurationTest(unittest.TestCase):
         for required in (
             "PCA_SPEC(pca20)",
             "PCA_SPEC(pca22)",
-            "PCA_SPEC(pca24)",
             "PCA9555_INPUT_PORT0",
             "PCA9555_POLARITY_PORT0",
             "PCA9555_CONFIGURATION_PORT0",
@@ -220,6 +219,27 @@ class SourceConfigurationTest(unittest.TestCase):
         self.assertIn("CONFIG_ZMK_USB_LOGGING=y", workflow)
         self.assertIn("CONFIG_NOCFREE_PAD_I2C_DIAGNOSTIC=y", workflow)
         self.assertIn('-DEXTRA_DTC_OVERLAY_FILE="${pad_diag_overlay}"', workflow)
+
+    def test_usb_wiring_probe_scans_two_live_expanders_and_all_bits(self):
+        overlay = PAD_DIAG_OVERLAY.read_text()
+        diagnostic = re.search(r"&kscan0\s*\{(.*?)\n\};", overlay, re.S)
+        self.assertIsNotNone(diagnostic)
+        self.assertIn("expanders = <&pca20>, <&pca22>;", diagnostic.group(1))
+        self.assertNotIn("pca24", diagnostic.group(1))
+        inputs = re.findall(r"<&pca(?:20|22)\s+\d+>", diagnostic.group(1))
+        self.assertEqual(len(inputs), 32)
+
+        keymap = PAD_DIAG_KEYMAP.read_text()
+        bindings = re.search(r"bindings\s*=\s*<(.*?)>;", keymap, re.S)
+        self.assertIsNotNone(bindings)
+        self.assertEqual(len(re.findall(r"&kp\s+\w+", bindings.group(1))), 32)
+
+        source = PAD_DIAG_SOURCE.read_text()
+        reporters = re.search(r"expanders\[\]\s*=\s*\{(.*?)\};", source, re.S)
+        self.assertIsNotNone(reporters)
+        self.assertIn("PCA_SPEC(pca20)", reporters.group(1))
+        self.assertIn("PCA_SPEC(pca22)", reporters.group(1))
+        self.assertNotIn("PCA_SPEC(pca24)", reporters.group(1))
 
 
 def role_dir(role: str) -> Path:

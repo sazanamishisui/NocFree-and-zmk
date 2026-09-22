@@ -25,7 +25,6 @@ LOG_MODULE_REGISTER(nocfree_pad_i2c_diag, CONFIG_ZMK_LOG_LEVEL);
 static const struct i2c_dt_spec expanders[] = {
     PCA_SPEC(pca20),
     PCA_SPEC(pca22),
-    PCA_SPEC(pca24),
 };
 
 static int read_pair(const struct i2c_dt_spec *spec, uint8_t reg, uint16_t *value) {

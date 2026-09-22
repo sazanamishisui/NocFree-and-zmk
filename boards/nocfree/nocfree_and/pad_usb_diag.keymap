@@ -1,13 +1,11 @@
 /*
  * SPDX-License-Identifier: MIT
  *
- * Temporary standalone USB-HID keymap for NocFree Pad hardware diagnosis.
+ * Temporary standalone USB-HID wiring probe for the NocFree Pad.
  *
- * This image deliberately disables split/BLE operation and sends the Pad's
- * PCA9555 key events directly over its USB-C connection.  It is not intended
- * for daily use.  Positions 0-84 remain transparent because the Pad transform
- * preserves the complete 106-position dongle keymap and appends its keys at
- * positions 85-105.
+ * PCA 0x20 bits 0-15 emit A-P. PCA 0x22 bits 0-9 emit Q-Z, and bits
+ * 10-15 emit 1-6. Pressing the physical keys in reading order therefore
+ * reveals the exact expander/bit wiring without assuming a factory layout.
  */
 #include <behaviors.dtsi>
 #include <dt-bindings/zmk/keys.h>
@@ -18,24 +16,13 @@
 
         default_layer {
             bindings = <
-                /* Preserved NocFree & positions 0-84. */
-                &trans &trans &trans &trans &trans &trans &trans &trans &trans &trans
-                &trans &trans &trans &trans &trans &trans &trans &trans &trans &trans
-                &trans &trans &trans &trans &trans &trans &trans &trans &trans &trans
-                &trans &trans &trans &trans &trans &trans &trans &trans &trans &trans
-                &trans &trans &trans &trans &trans &trans &trans &trans &trans &trans
-                &trans &trans &trans &trans &trans &trans &trans &trans &trans &trans
-                &trans &trans &trans &trans &trans &trans &trans &trans &trans &trans
-                &trans &trans &trans &trans &trans &trans &trans &trans &trans &trans
-                &trans &trans &trans &trans &trans
+                /* PCA 0x20 bits 0-15. */
+                &kp A &kp B &kp C &kp D &kp E &kp F &kp G &kp H
+                &kp I &kp J &kp K &kp L &kp M &kp N &kp O &kp P
 
-                /* NocFree Pad positions 85-105, in physical reading order. */
-                &kp KP_NUMLOCK &kp F3        &kp F4          &kp F7
-                &kp ESC        &kp KP_DIVIDE &kp KP_MULTIPLY &kp KP_MINUS
-                &kp KP_N7      &kp KP_N8     &kp KP_N9       &kp KP_PLUS
-                &kp KP_N4      &kp KP_N5     &kp KP_N6
-                &kp KP_N1      &kp KP_N2     &kp KP_N3       &kp KP_ENTER
-                &kp KP_N0      &kp KP_DOT
+                /* PCA 0x22 bits 0-15. */
+                &kp Q &kp R &kp S &kp T &kp U &kp V &kp W &kp X
+                &kp Y &kp Z &kp N1 &kp N2 &kp N3 &kp N4 &kp N5 &kp N6
             >;
         };
     };

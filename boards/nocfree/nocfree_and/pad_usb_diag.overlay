@@ -1,9 +1,46 @@
 /* SPDX-License-Identifier: MIT */
 
-/* Reuse the board's recovery CDC port as the USB logging console. */
+/*
+ * Reuse the board's recovery CDC port as the USB logging console. The live
+ * v0.6.2 capture proved that this Pad has responders at 0x20 and 0x22 only.
+ * Scan all 32 input bits so the physical 21-key wiring can be discovered
+ * without carrying the incorrect third-expander assumption into production.
+ */
 / {
     chosen {
         zephyr,console = &cdc_acm_uart0;
         zephyr,shell-uart = &cdc_acm_uart0;
     };
+};
+
+&kscan0 {
+    /delete-property/ expanders;
+    expanders = <&pca20>, <&pca22>;
+
+    /delete-property/ key-inputs;
+    key-inputs =
+        <&pca20 0>, <&pca20 1>, <&pca20 2>, <&pca20 3>,
+        <&pca20 4>, <&pca20 5>, <&pca20 6>, <&pca20 7>,
+        <&pca20 8>, <&pca20 9>, <&pca20 10>, <&pca20 11>,
+        <&pca20 12>, <&pca20 13>, <&pca20 14>, <&pca20 15>,
+        <&pca22 0>, <&pca22 1>, <&pca22 2>, <&pca22 3>,
+        <&pca22 4>, <&pca22 5>, <&pca22 6>, <&pca22 7>,
+        <&pca22 8>, <&pca22 9>, <&pca22 10>, <&pca22 11>,
+        <&pca22 12>, <&pca22 13>, <&pca22 14>, <&pca22 15>;
+};
+
+&matrix_transform0 {
+    /delete-property/ col-offset;
+    /delete-property/ map;
+    columns = <32>;
+    map = <
+        RC(0,0)  RC(0,1)  RC(0,2)  RC(0,3)
+        RC(0,4)  RC(0,5)  RC(0,6)  RC(0,7)
+        RC(0,8)  RC(0,9)  RC(0,10) RC(0,11)
+        RC(0,12) RC(0,13) RC(0,14) RC(0,15)
+        RC(0,16) RC(0,17) RC(0,18) RC(0,19)
+        RC(0,20) RC(0,21) RC(0,22) RC(0,23)
+        RC(0,24) RC(0,25) RC(0,26) RC(0,27)
+        RC(0,28) RC(0,29) RC(0,30) RC(0,31)
+    >;
 };
