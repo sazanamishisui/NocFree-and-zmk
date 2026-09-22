@@ -58,31 +58,33 @@ include:
   # Temporary standalone images that measure each half locally. USB logging
   # avoids the unsafe split-central battery-fetch path in the pinned ZMK.
   - board: nocfree_and_left/nrf52833/zmk
-    artifact-name: nocfree_and_left_battery_diagnostic
+    artifact-name: nocfree_and_left_battery_adc_probe
     cmake-args: >-
       -DCONFIG_ZMK_SPLIT=n
       -DCONFIG_ZMK_BLE=n
       -DCONFIG_ZMK_USB=y
       -DCONFIG_ZMK_BATTERY_REPORTING=n
-      -DCONFIG_SENSOR=y
+      -DCONFIG_SENSOR=n
+      -DCONFIG_ADC=y
       -DCONFIG_USB_DEVICE_INITIALIZE_AT_BOOT=n
       -DCONFIG_ZMK_USB_LOGGING=y
       -DCONFIG_ZMK_LOGGING_MINIMAL=y
-      -DCONFIG_NOCFREE_LOCAL_BATTERY_DIAGNOSTIC=y
+      -DCONFIG_NOCFREE_BATTERY_ADC_PROBE=y
       -DEXTRA_DTC_OVERLAY_FILE=${GITHUB_WORKSPACE}/boards/nocfree/nocfree_and/battery_diag.overlay
 
   - board: nocfree_and_right/nrf52833/zmk
-    artifact-name: nocfree_and_right_battery_diagnostic
+    artifact-name: nocfree_and_right_battery_adc_probe
     cmake-args: >-
       -DCONFIG_ZMK_SPLIT=n
       -DCONFIG_ZMK_BLE=n
       -DCONFIG_ZMK_USB=y
       -DCONFIG_ZMK_BATTERY_REPORTING=n
-      -DCONFIG_SENSOR=y
+      -DCONFIG_SENSOR=n
+      -DCONFIG_ADC=y
       -DCONFIG_USB_DEVICE_INITIALIZE_AT_BOOT=n
       -DCONFIG_ZMK_USB_LOGGING=y
       -DCONFIG_ZMK_LOGGING_MINIMAL=y
-      -DCONFIG_NOCFREE_LOCAL_BATTERY_DIAGNOSTIC=y
+      -DCONFIG_NOCFREE_BATTERY_ADC_PROBE=y
       -DEXTRA_DTC_OVERLAY_FILE=${GITHUB_WORKSPACE}/boards/nocfree/nocfree_and/battery_diag.overlay
 
   # Recovery images are provided for every device. Existing left/right bonds

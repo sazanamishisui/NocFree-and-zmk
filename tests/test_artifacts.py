@@ -45,7 +45,7 @@ PAD_DIAG_OVERLAY = (
     ROOT / "boards" / "nocfree" / "nocfree_and" / "pad_usb_diag.overlay"
 )
 PAD_DIAG_SOURCE = ROOT / "src" / "pad_i2c_diagnostic.c"
-LOCAL_BATTERY_DIAG_SOURCE = ROOT / "src" / "local_battery_diagnostic.c"
+BATTERY_ADC_PROBE_SOURCE = ROOT / "src" / "battery_adc_probe.c"
 BATTERY_DIAG_OVERLAY = (
     ROOT / "boards" / "nocfree" / "nocfree_and" / "battery_diag.overlay"
 )
@@ -66,8 +66,8 @@ class SourceConfigurationTest(unittest.TestCase):
             "nocfree_and_pad_peripheral",
             "nocfree_and_pad_usb_diagnostic",
             "nocfree_and_dongle",
-            "nocfree_and_left_battery_diagnostic",
-            "nocfree_and_right_battery_diagnostic",
+            "nocfree_and_left_battery_adc_probe",
+            "nocfree_and_right_battery_adc_probe",
             "nocfree_and_left_settings_reset",
             "nocfree_and_right_settings_reset",
             "nocfree_and_pad_settings_reset",
@@ -187,33 +187,35 @@ class SourceConfigurationTest(unittest.TestCase):
             "src/peripheral_battery_event_compat.c", dongle_block.group(1)
         )
 
-    def test_battery_diagnostics_measure_each_half_locally(self):
-        source = LOCAL_BATTERY_DIAG_SOURCE.read_text()
-        self.assertIn("sensor_sample_fetch_chan", source)
-        self.assertIn("SENSOR_CHAN_GAUGE_VOLTAGE", source)
-        self.assertIn("SENSOR_CHAN_GAUGE_STATE_OF_CHARGE", source)
-        self.assertIn(
-            "NOCFREE_LOCAL_BATTERY millivolts=%d level=%d%%", source
-        )
+    def test_battery_adc_probes_compare_divider_off_and_on(self):
+        source = BATTERY_ADC_PROBE_SOURCE.read_text()
+        self.assertIn("adc_read", source)
+        self.assertIn("gpio_pin_set_dt(&divider_enable, 0)", source)
+        self.assertIn("gpio_pin_set_dt(&divider_enable, 1)", source)
+        self.assertIn("off_raw=%d off_pin_mv=%d", source)
+        self.assertIn("on_raw=%d on_pin_mv=%d", source)
+        self.assertIn("factory_mv=%d current_zmk_mv=%d", source)
         self.assertIn("K_SECONDS(5)", source)
 
         kconfig = (ROOT / "Kconfig").read_text()
-        self.assertIn("config NOCFREE_LOCAL_BATTERY_DIAGNOSTIC", kconfig)
-        self.assertIn("depends on ZMK_BATTERY", kconfig)
+        self.assertIn("config NOCFREE_BATTERY_ADC_PROBE", kconfig)
+        self.assertIn("depends on ADC", kconfig)
+        self.assertIn("depends on GPIO", kconfig)
 
         cmake = (ROOT / "CMakeLists.txt").read_text()
-        self.assertIn("CONFIG_NOCFREE_LOCAL_BATTERY_DIAGNOSTIC", cmake)
-        self.assertIn("src/local_battery_diagnostic.c", cmake)
+        self.assertIn("CONFIG_NOCFREE_BATTERY_ADC_PROBE", cmake)
+        self.assertIn("src/battery_adc_probe.c", cmake)
 
         matrix = BUILD_MATRIX.read_text()
         for side in ("left", "right"):
             self.assertIn(
-                f"artifact-name: nocfree_and_{side}_battery_diagnostic", matrix
+                f"artifact-name: nocfree_and_{side}_battery_adc_probe", matrix
             )
         self.assertEqual(
-            matrix.count("CONFIG_NOCFREE_LOCAL_BATTERY_DIAGNOSTIC=y"), 2
+            matrix.count("CONFIG_NOCFREE_BATTERY_ADC_PROBE=y"), 2
         )
         self.assertEqual(matrix.count("CONFIG_ZMK_BATTERY_REPORTING=n"), 2)
+        self.assertEqual(matrix.count("CONFIG_ADC=y"), 2)
         self.assertNotIn("artifact-name: nocfree_and_dongle_battery_diagnostic", matrix)
         self.assertTrue(BATTERY_DIAG_OVERLAY.is_file())
         self.assertIn(
@@ -221,11 +223,11 @@ class SourceConfigurationTest(unittest.TestCase):
         )
 
         workflow = WORKFLOW.read_text()
-        self.assertIn("/tmp/ws/build/left_battery_diagnostic", workflow)
-        self.assertIn("/tmp/ws/build/right_battery_diagnostic", workflow)
+        self.assertIn("/tmp/ws/build/left_battery_adc_probe", workflow)
+        self.assertIn("/tmp/ws/build/right_battery_adc_probe", workflow)
         self.assertNotIn("/tmp/ws/build/dongle_battery_diagnostic", workflow)
         self.assertEqual(
-            workflow.count("CONFIG_NOCFREE_LOCAL_BATTERY_DIAGNOSTIC=y"), 2
+            workflow.count("CONFIG_NOCFREE_BATTERY_ADC_PROBE=y"), 2
         )
 
     def test_editable_studio_layers_and_toggle_keys_exist(self):
@@ -332,9 +334,9 @@ def diagnostic_available() -> bool:
     return (role_dir("pad_usb_diagnostic") / ".config").is_file()
 
 
-def battery_diagnostics_available() -> bool:
+def battery_adc_probes_available() -> bool:
     return all(
-        (role_dir(f"{side}_battery_diagnostic") / ".config").is_file()
+        (role_dir(f"{side}_battery_adc_probe") / ".config").is_file()
         for side in ("left", "right")
     )
 
@@ -656,18 +658,18 @@ class ArtifactTest(unittest.TestCase):
 
 
 @unittest.skipUnless(
-    battery_diagnostics_available(),
-    f"no complete local battery diagnostic build output under {BUILD}",
+    battery_adc_probes_available(),
+    f"no complete battery ADC probe build output under {BUILD}",
 )
-class BatteryDiagnosticArtifactTest(unittest.TestCase):
-    ROLES = ("left_battery_diagnostic", "right_battery_diagnostic")
+class BatteryAdcProbeArtifactTest(unittest.TestCase):
+    ROLES = ("left_battery_adc_probe", "right_battery_adc_probe")
 
-    def test_diagnostics_are_local_usb_only_measurements(self):
+    def test_probes_are_local_usb_only_measurements(self):
         for role in self.ROLES:
             config = kconfig(role)
             with self.subTest(role):
                 self.assertEqual(
-                    config.get("CONFIG_NOCFREE_LOCAL_BATTERY_DIAGNOSTIC"), "y"
+                    config.get("CONFIG_NOCFREE_BATTERY_ADC_PROBE"), "y"
                 )
                 self.assertEqual(config.get("CONFIG_ZMK_USB_LOGGING"), "y")
                 self.assertEqual(config.get("CONFIG_ZMK_LOGGING_MINIMAL"), "y")
@@ -675,13 +677,17 @@ class BatteryDiagnosticArtifactTest(unittest.TestCase):
                 self.assertNotEqual(config.get("CONFIG_ZMK_BLE"), "y")
                 self.assertNotEqual(config.get("CONFIG_ZMK_SPLIT"), "y")
                 self.assertNotEqual(config.get("CONFIG_ZMK_BATTERY_REPORTING"), "y")
-                self.assertEqual(config.get("CONFIG_ZMK_BATTERY_VOLTAGE_DIVIDER"), "y")
+                self.assertNotEqual(
+                    config.get("CONFIG_ZMK_BATTERY_VOLTAGE_DIVIDER"), "y"
+                )
+                self.assertEqual(config.get("CONFIG_ADC"), "y")
 
-    def test_diagnostics_link_only_the_local_reporter(self):
+    def test_probes_link_only_the_raw_adc_reporter(self):
         for role in self.ROLES:
             mapfile = (role_dir(role) / "zmk.map").read_text(errors="replace")
             with self.subTest(role):
-                self.assertIn("local_battery_diagnostic.c.obj", mapfile)
+                self.assertIn("battery_adc_probe.c.obj", mapfile)
+                self.assertNotIn("local_battery_diagnostic.c.obj", mapfile)
                 self.assertNotIn("(battery_diagnostic.c.obj)", mapfile)
                 self.assertNotIn("peripheral_battery_event_compat.c.obj", mapfile)
 

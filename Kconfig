@@ -85,3 +85,14 @@ config NOCFREE_LOCAL_BATTERY_DIAGNOSTIC
       Sample the chosen local battery sensor every five seconds and print both
       millivolts and the driver's percentage. This diagnostic does not use the
       split-central battery subscription path.
+
+config NOCFREE_BATTERY_ADC_PROBE
+    bool "Compare NocFree battery ADC with its divider disabled and enabled"
+    default n
+    depends on ADC
+    depends on GPIO
+    depends on LOG
+    help
+      Read the verified AIN2 input with the verified divider-enable GPIO first
+      inactive and then active. Print the raw ADC counts, pin millivolts, and
+      both the factory and current ZMK conversions over USB logging.
