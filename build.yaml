@@ -55,6 +55,21 @@ include:
       -DCONFIG_ZMK_STUDIO_LOCKING=n
       -DKEYMAP_FILE=${GITHUB_WORKSPACE}/boards/shields/nocfree_and/nocfree_and_dongle.keymap
 
+  # Temporary XIAO image that prints received left/right battery percentages
+  # over the board's existing USB CDC console. The normal dongle above keeps
+  # logging disabled.
+  - board: xiao_ble//zmk
+    shield: nocfree_and_dongle
+    artifact-name: nocfree_and_dongle_battery_diagnostic
+    snippet: studio-rpc-usb-uart
+    cmake-args: >-
+      -DCONFIG_ZMK_STUDIO=y
+      -DCONFIG_ZMK_STUDIO_LOCKING=n
+      -DCONFIG_ZMK_USB_LOGGING=y
+      -DCONFIG_ZMK_LOG_LEVEL=3
+      -DCONFIG_NOCFREE_BATTERY_DIAGNOSTIC=y
+      -DKEYMAP_FILE=${GITHUB_WORKSPACE}/boards/shields/nocfree_and/nocfree_and_dongle.keymap
+
   # Recovery images are provided for every device. Existing left/right bonds
   # should normally be preserved when adding the Pad; reset only if pairing
   # does not converge.

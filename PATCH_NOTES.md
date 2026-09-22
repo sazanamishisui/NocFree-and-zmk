@@ -1,3 +1,18 @@
+# v0.7.1 diagnostic patch contents
+
+## Changes in v0.7.1
+
+- Added a separate `nocfree_and_dongle_battery_diagnostic.uf2` image.
+- The diagnostic dongle retains the normal keymap, ZMK Studio, USB/Bluetooth
+  switching and layer LED while enabling USB CDC logging temporarily.
+- Added a dongle-only event listener that prints the split source index and
+  received percentage as `NOCFREE_BATTERY peripheral=N level=P%`.
+- Kept logging and the diagnostic listener disabled in the normal dongle image.
+- Added source and built-artifact checks requiring the diagnostic listener in
+  the diagnostic map file and forbidding it in the normal dongle map file.
+- No keyboard-half, Pad, ADC, divider, charge, keymap or pairing setting was
+  changed.
+
 # v0.7.0 patch contents
 
 ## Changes in v0.7.0

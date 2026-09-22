@@ -173,9 +173,29 @@ split device fails to reconnect.
 4. Leave the Pad on v0.6.5; v0.7 contains no Pad battery node.
 
 An inaccurate percentage is a calibration problem, not evidence of electrical
-damage. A future low-battery indicator or logging build will make the fetched
-left/right values visible; this version intentionally only measures and sends
-them.
+damage. The separate v0.7.1 diagnostic dongle described below makes the fetched
+values visible without adding permanent logging overhead to the normal image.
+
+## Temporary battery diagnostic dongle in v0.7.1
+
+`nocfree_and_dongle_battery_diagnostic.uf2` is a temporary XIAO image. It keeps
+the normal dongle behavior and Studio interface, but also enables the existing
+USB CDC console and prints each received event in this form:
+
+```text
+NOCFREE_BATTERY peripheral=0 level=87%
+```
+
+The peripheral number is the dongle's stable split slot, not a hard-coded
+left/right name. Open the logging COM port at 115200 baud, then power-cycle the
+left and right halves one at a time. Each reconnect causes an initial Battery
+Service read, allowing the two slot numbers to be identified. The Pad produces
+no battery line in this version because its measurement remains disabled.
+
+Windows may show two XIAO COM ports: one for Studio and one for logging. Opening
+the wrong port produces no readable battery line; close it and try the other.
+After recording both values, flash the normal `nocfree_and_dongle.uf2` back to
+the XIAO. No settings-reset image is needed in either direction.
 
 ## Important topology change
 
@@ -191,16 +211,18 @@ HID device.
 
 ## First build gate — do not flash before it is green
 
-1. Apply these files to the `v0.7-battery-monitor` branch created from the
-   released v0.6.5 source.
+1. Create `v0.7.1-battery-diagnostic` from the all-green
+   `v0.7-battery-monitor` branch and apply these files there.
 2. Push to GitHub.
 3. Confirm **Validate sources**, **Firmware**, and **Verify built artifacts**
    all pass.
-4. Inspect the produced firmware ZIP for these eight images:
+4. Inspect the produced firmware ZIP for these ten images:
    - `nocfree_and_left_peripheral.uf2`
    - `nocfree_and_right_peripheral.uf2`
    - `nocfree_and_pad_peripheral.uf2`
    - `nocfree_and_dongle.uf2`
+   - `nocfree_and_pad_usb_diagnostic.uf2`
+   - `nocfree_and_dongle_battery_diagnostic.uf2`
    - the corresponding four `settings_reset` images
 
 The source checks pass locally, but this environment does not contain the

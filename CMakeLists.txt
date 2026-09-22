@@ -18,4 +18,6 @@ if(CONFIG_SHIELD_NOCFREE_AND_DONGLE)
   zephyr_library_sources_ifdef(
     CONFIG_ZMK_SPLIT_BLE_CENTRAL_BATTERY_LEVEL_FETCHING
     src/peripheral_battery_event_compat.c)
+  zephyr_library_sources_ifdef(CONFIG_NOCFREE_BATTERY_DIAGNOSTIC
+                               src/battery_diagnostic.c)
 endif()

@@ -63,3 +63,14 @@ config NOCFREE_PAD_I2C_DIAGNOSTIC
       Read the three Pad expanders every two seconds and report their input,
       polarity and configuration registers over the selected logging backend.
       This is a temporary read-only fault-isolation feature.
+
+config NOCFREE_BATTERY_DIAGNOSTIC
+    bool "Report split-peripheral battery events over USB logging"
+    default n
+    depends on ZMK_SPLIT_ROLE_CENTRAL
+    depends on ZMK_SPLIT_BLE_CENTRAL_BATTERY_LEVEL_FETCHING
+    depends on LOG
+    help
+      Print the split source index and reported state of charge whenever the
+      dongle receives a peripheral battery event. This is intended only for a
+      temporary USB diagnostic image; the normal dongle keeps logging off.
