@@ -222,6 +222,7 @@ class SourceConfigurationTest(unittest.TestCase):
 
     def test_usb_wiring_probe_scans_two_live_expanders_and_all_bits(self):
         overlay = PAD_DIAG_OVERLAY.read_text()
+        self.assertNotIn("RC(", overlay)
         diagnostic = re.search(r"&kscan0\s*\{(.*?)\n\};", overlay, re.S)
         self.assertIsNotNone(diagnostic)
         self.assertIn("expanders = <&pca20>, <&pca22>;", diagnostic.group(1))

@@ -22,3 +22,8 @@ Identifier mapping:
 After flashing the diagnostic UF2, turn the Japanese IME off and press the 21
 physical Pad keys once each in visual row order. The resulting 21-character
 string is the evidence needed to build the final production key map.
+
+The transform uses the literal single-row positions `0` through `31`. This
+avoids a preprocessor name collision between ZMK's right-control `RC()` macro
+and the matrix-transform coordinate macro when the keymap and extra overlay
+are preprocessed together.
