@@ -65,7 +65,7 @@ config NOCFREE_PAD_I2C_DIAGNOSTIC
       This is a temporary read-only fault-isolation feature.
 
 config NOCFREE_BATTERY_DIAGNOSTIC
-    bool "Report split-peripheral battery events over USB logging"
+    bool "Report split-peripheral battery events over USB logging (unsafe legacy diagnostic)"
     default n
     depends on ZMK_SPLIT_ROLE_CENTRAL
     depends on ZMK_SPLIT_BLE_CENTRAL_BATTERY_LEVEL_FETCHING
@@ -73,4 +73,15 @@ config NOCFREE_BATTERY_DIAGNOSTIC
     help
       Print the split source index and reported state of charge whenever the
       dongle receives a peripheral battery event. This is intended only for a
-      temporary USB diagnostic image; the normal dongle keeps logging off.
+      temporary USB diagnostic image. Do not enable this on the pinned ZMK
+      revision: non-split BLE disconnects can produce an invalid source index.
+
+config NOCFREE_LOCAL_BATTERY_DIAGNOSTIC
+    bool "Report one half's local battery voltage over USB logging"
+    default n
+    depends on ZMK_BATTERY
+    depends on LOG
+    help
+      Sample the chosen local battery sensor every five seconds and print both
+      millivolts and the driver's percentage. This diagnostic does not use the
+      split-central battery subscription path.

@@ -8,6 +8,8 @@ zephyr_library_sources_ifdef(CONFIG_NOCFREE_RECOVERY_CDC_1200_TOUCH
                              src/cdc_1200_touch.c)
 zephyr_library_sources_ifdef(CONFIG_NOCFREE_PAD_I2C_DIAGNOSTIC
                              src/pad_i2c_diagnostic.c)
+zephyr_library_sources_ifdef(CONFIG_NOCFREE_LOCAL_BATTERY_DIAGNOSTIC
+                             src/local_battery_diagnostic.c)
 
 # The output router is dongle-only. ZMK's event manager headers are internal
 # application headers, so expose that include directory to this module target.

@@ -45,7 +45,10 @@ PAD_DIAG_OVERLAY = (
     ROOT / "boards" / "nocfree" / "nocfree_and" / "pad_usb_diag.overlay"
 )
 PAD_DIAG_SOURCE = ROOT / "src" / "pad_i2c_diagnostic.c"
-BATTERY_DIAG_SOURCE = ROOT / "src" / "battery_diagnostic.c"
+LOCAL_BATTERY_DIAG_SOURCE = ROOT / "src" / "local_battery_diagnostic.c"
+BATTERY_DIAG_OVERLAY = (
+    ROOT / "boards" / "nocfree" / "nocfree_and" / "battery_diag.overlay"
+)
 
 
 class SourceConfigurationTest(unittest.TestCase):
@@ -63,7 +66,8 @@ class SourceConfigurationTest(unittest.TestCase):
             "nocfree_and_pad_peripheral",
             "nocfree_and_pad_usb_diagnostic",
             "nocfree_and_dongle",
-            "nocfree_and_dongle_battery_diagnostic",
+            "nocfree_and_left_battery_diagnostic",
+            "nocfree_and_right_battery_diagnostic",
             "nocfree_and_left_settings_reset",
             "nocfree_and_right_settings_reset",
             "nocfree_and_pad_settings_reset",
@@ -183,39 +187,46 @@ class SourceConfigurationTest(unittest.TestCase):
             "src/peripheral_battery_event_compat.c", dongle_block.group(1)
         )
 
-    def test_battery_diagnostic_is_a_separate_dongle_image(self):
-        source = BATTERY_DIAG_SOURCE.read_text()
-        self.assertIn("as_zmk_peripheral_battery_state_changed", source)
-        self.assertIn("NOCFREE_BATTERY peripheral=%u level=%u%%", source)
+    def test_battery_diagnostics_measure_each_half_locally(self):
+        source = LOCAL_BATTERY_DIAG_SOURCE.read_text()
+        self.assertIn("sensor_sample_fetch_chan", source)
+        self.assertIn("SENSOR_CHAN_GAUGE_VOLTAGE", source)
+        self.assertIn("SENSOR_CHAN_GAUGE_STATE_OF_CHARGE", source)
         self.assertIn(
-            "ZMK_SUBSCRIPTION(nocfree_battery_diagnostic, "
-            "zmk_peripheral_battery_state_changed)",
-            source,
+            "NOCFREE_LOCAL_BATTERY millivolts=%d level=%d%%", source
         )
+        self.assertIn("K_SECONDS(5)", source)
 
         kconfig = (ROOT / "Kconfig").read_text()
-        self.assertIn("config NOCFREE_BATTERY_DIAGNOSTIC", kconfig)
-        self.assertIn("depends on ZMK_SPLIT_ROLE_CENTRAL", kconfig)
-        self.assertIn(
-            "depends on ZMK_SPLIT_BLE_CENTRAL_BATTERY_LEVEL_FETCHING", kconfig
-        )
+        self.assertIn("config NOCFREE_LOCAL_BATTERY_DIAGNOSTIC", kconfig)
+        self.assertIn("depends on ZMK_BATTERY", kconfig)
 
         cmake = (ROOT / "CMakeLists.txt").read_text()
-        self.assertIn("CONFIG_NOCFREE_BATTERY_DIAGNOSTIC", cmake)
-        self.assertIn("src/battery_diagnostic.c", cmake)
+        self.assertIn("CONFIG_NOCFREE_LOCAL_BATTERY_DIAGNOSTIC", cmake)
+        self.assertIn("src/local_battery_diagnostic.c", cmake)
 
         matrix = BUILD_MATRIX.read_text()
-        self.assertIn(
-            "artifact-name: nocfree_and_dongle_battery_diagnostic", matrix
+        for side in ("left", "right"):
+            self.assertIn(
+                f"artifact-name: nocfree_and_{side}_battery_diagnostic", matrix
+            )
+        self.assertEqual(
+            matrix.count("CONFIG_NOCFREE_LOCAL_BATTERY_DIAGNOSTIC=y"), 2
         )
-        self.assertEqual(matrix.count("CONFIG_NOCFREE_BATTERY_DIAGNOSTIC=y"), 1)
-        self.assertIn("CONFIG_ZMK_USB_LOGGING=y", matrix)
-        self.assertIn("CONFIG_ZMK_LOGGING_MINIMAL=y", matrix)
-        self.assertNotIn("CONFIG_ZMK_LOG_LEVEL=", matrix)
+        self.assertEqual(matrix.count("CONFIG_ZMK_BATTERY_REPORTING=n"), 2)
+        self.assertNotIn("artifact-name: nocfree_and_dongle_battery_diagnostic", matrix)
+        self.assertTrue(BATTERY_DIAG_OVERLAY.is_file())
+        self.assertIn(
+            "zephyr,console = &cdc_acm_uart0", BATTERY_DIAG_OVERLAY.read_text()
+        )
 
         workflow = WORKFLOW.read_text()
-        self.assertIn("/tmp/ws/build/dongle_battery_diagnostic", workflow)
-        self.assertIn("CONFIG_NOCFREE_BATTERY_DIAGNOSTIC=y", workflow)
+        self.assertIn("/tmp/ws/build/left_battery_diagnostic", workflow)
+        self.assertIn("/tmp/ws/build/right_battery_diagnostic", workflow)
+        self.assertNotIn("/tmp/ws/build/dongle_battery_diagnostic", workflow)
+        self.assertEqual(
+            workflow.count("CONFIG_NOCFREE_LOCAL_BATTERY_DIAGNOSTIC=y"), 2
+        )
 
     def test_editable_studio_layers_and_toggle_keys_exist(self):
         text = KEYMAP.read_text()
@@ -321,8 +332,11 @@ def diagnostic_available() -> bool:
     return (role_dir("pad_usb_diagnostic") / ".config").is_file()
 
 
-def battery_diagnostic_available() -> bool:
-    return (role_dir("dongle_battery_diagnostic") / ".config").is_file()
+def battery_diagnostics_available() -> bool:
+    return all(
+        (role_dir(f"{side}_battery_diagnostic") / ".config").is_file()
+        for side in ("left", "right")
+    )
 
 
 def kconfig(role: str) -> dict[str, str]:
@@ -437,7 +451,7 @@ class ArtifactTest(unittest.TestCase):
         self.assertEqual(kconfig("right").get("CONFIG_ZMK_BATTERY_REPORTING"), "y")
         self.assertNotEqual(kconfig("pad").get("CONFIG_ZMK_BATTERY_REPORTING"), "y")
         self.assertNotEqual(kconfig("dongle").get("CONFIG_ZMK_BATTERY_REPORTING"), "y")
-        self.assertEqual(
+        self.assertNotEqual(
             kconfig("dongle").get("CONFIG_ZMK_SPLIT_BLE_CENTRAL_BATTERY_LEVEL_FETCHING"),
             "y",
         )
@@ -450,7 +464,7 @@ class ArtifactTest(unittest.TestCase):
                 self.assertEqual(config.get("CONFIG_BT_BAS"), "y")
 
         dongle_map = (role_dir("dongle") / "zmk.map").read_text(errors="replace")
-        self.assertIn("peripheral_battery_event_compat.c.obj", dongle_map)
+        self.assertNotIn("peripheral_battery_event_compat.c.obj", dongle_map)
         self.assertNotIn("battery_diagnostic.c.obj", dongle_map)
 
     def test_compiled_battery_nodes_keep_exact_factory_pinout(self):
@@ -642,33 +656,44 @@ class ArtifactTest(unittest.TestCase):
 
 
 @unittest.skipUnless(
-    battery_diagnostic_available(),
-    f"no battery diagnostic dongle build output under {BUILD}",
+    battery_diagnostics_available(),
+    f"no complete local battery diagnostic build output under {BUILD}",
 )
 class BatteryDiagnosticArtifactTest(unittest.TestCase):
-    def test_diagnostic_enables_logging_without_a_local_battery_report(self):
-        config = kconfig("dongle_battery_diagnostic")
-        self.assertEqual(config.get("CONFIG_NOCFREE_BATTERY_DIAGNOSTIC"), "y")
-        self.assertEqual(config.get("CONFIG_ZMK_USB_LOGGING"), "y")
-        self.assertEqual(config.get("CONFIG_ZMK_LOGGING_MINIMAL"), "y")
-        self.assertEqual(config.get("CONFIG_ZMK_STUDIO"), "y")
-        self.assertEqual(
-            config.get("CONFIG_ZMK_SPLIT_BLE_CENTRAL_BATTERY_LEVEL_FETCHING"),
-            "y",
-        )
-        self.assertNotEqual(config.get("CONFIG_ZMK_BATTERY_REPORTING"), "y")
+    ROLES = ("left_battery_diagnostic", "right_battery_diagnostic")
 
-    def test_diagnostic_links_listener_and_compatibility_event(self):
-        mapfile = (role_dir("dongle_battery_diagnostic") / "zmk.map").read_text(
-            errors="replace"
-        )
-        self.assertIn("battery_diagnostic.c.obj", mapfile)
-        self.assertIn("peripheral_battery_event_compat.c.obj", mapfile)
+    def test_diagnostics_are_local_usb_only_measurements(self):
+        for role in self.ROLES:
+            config = kconfig(role)
+            with self.subTest(role):
+                self.assertEqual(
+                    config.get("CONFIG_NOCFREE_LOCAL_BATTERY_DIAGNOSTIC"), "y"
+                )
+                self.assertEqual(config.get("CONFIG_ZMK_USB_LOGGING"), "y")
+                self.assertEqual(config.get("CONFIG_ZMK_LOGGING_MINIMAL"), "y")
+                self.assertEqual(config.get("CONFIG_ZMK_USB"), "y")
+                self.assertNotEqual(config.get("CONFIG_ZMK_BLE"), "y")
+                self.assertNotEqual(config.get("CONFIG_ZMK_SPLIT"), "y")
+                self.assertNotEqual(config.get("CONFIG_ZMK_BATTERY_REPORTING"), "y")
+                self.assertEqual(config.get("CONFIG_ZMK_BATTERY_VOLTAGE_DIVIDER"), "y")
 
-    def test_diagnostic_outputs_uf2(self):
-        self.assertTrue(
-            (role_dir("dongle_battery_diagnostic") / "zmk.uf2").is_file()
-        )
+    def test_diagnostics_link_only_the_local_reporter(self):
+        for role in self.ROLES:
+            mapfile = (role_dir(role) / "zmk.map").read_text(errors="replace")
+            with self.subTest(role):
+                self.assertIn("local_battery_diagnostic.c.obj", mapfile)
+                self.assertNotIn("battery_diagnostic.c.obj", mapfile)
+                self.assertNotIn("peripheral_battery_event_compat.c.obj", mapfile)
+
+    def test_diagnostic_uf2s_stay_inside_application_partition(self):
+        for role in self.ROLES:
+            uf2 = role_dir(role) / "zmk.uf2"
+            with self.subTest(role):
+                self.assertTrue(uf2.is_file())
+                for block in uf2_blocks(uf2):
+                    self.assertGreaterEqual(block["address"], CODE_START)
+                    self.assertLessEqual(block["address"] + block["payload"], CODE_END)
+                    self.assertEqual(block["family"], 0x621E937A)
 
 
 @unittest.skipUnless(
