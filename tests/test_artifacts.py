@@ -428,10 +428,23 @@ class ArtifactTest(unittest.TestCase):
                     rf"power-gpios = < &gpio0 0x{enable_pin:x} 0x0 >",
                 )
 
-        for role in ("pad", "dongle"):
-            text = (role_dir(role) / "zephyr.dts").read_text()
-            with self.subTest(role):
-                self.assertNotIn('compatible = "zmk,battery-voltage-divider"', text)
+        pad_text = (role_dir("pad") / "zephyr.dts").read_text()
+        self.assertNotIn('compatible = "zmk,battery-voltage-divider"', pad_text)
+
+        # XIAO's upstream board DTS always contains its own VBAT divider even
+        # when CONFIG_ZMK_BATTERY_REPORTING=n. Keep that known node exact so it
+        # cannot be confused with either NocFree half's newly enabled circuit.
+        dongle_text = (role_dir("dongle") / "zephyr.dts").read_text()
+        dongle_node = re.search(
+            r"vbatt: vbatt \{(.*?)\n\s*\};", dongle_text, re.S
+        )
+        self.assertIsNotNone(dongle_node)
+        values = dongle_node.group(1)
+        self.assertIn('compatible = "zmk,battery-voltage-divider"', values)
+        self.assertRegex(values, r"io-channels = < &adc 0x7 >")
+        self.assertRegex(values, r"power-gpios = < &gpio0 0xe 0x7 >")
+        self.assertRegex(values, r"output-ohms = < 0x7c830 >")
+        self.assertRegex(values, r"full-ohms = < 0x170a70 >")
 
     def test_excluded_features_are_absent(self):
         for role in self.ROLES:

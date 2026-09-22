@@ -153,6 +153,12 @@ a central fetches split battery levels but has no local battery of its own.
 this USB-powered dongle configuration; it does not create a fictitious XIAO
 battery or touch any GPIO.
 
+The upstream XIAO board devicetree already contains its own `vbatt` node. It
+therefore remains visible in compiled devicetree output, but this firmware keeps
+`CONFIG_ZMK_BATTERY_REPORTING=n` on the dongle, so the node is not sampled or
+reported. Artifact tests distinguish that stock XIAO node from the enabled
+NocFree left/right circuits instead of incorrectly requiring it to disappear.
+
 ### Conservative first battery test
 
 Do not flash until all three GitHub Actions jobs are green. Keep the v0.6.5 and

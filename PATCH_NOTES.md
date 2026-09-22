@@ -19,6 +19,8 @@
   revision. That revision calls the peripheral-battery event while fetching,
   but otherwise links its implementation only when the central reports a local
   battery; the USB-powered XIAO intentionally has no local battery source.
+- Updated artifact checks to distinguish the dormant VBAT divider built into
+  the upstream XIAO board definition from the two enabled NocFree dividers.
 - Deliberately left Pad battery reporting disabled until its exact factory
   firmware/hardware revision is confirmed.
 - Did not alter the XIAO layer LED, keymap, scanner, debounce, output switching,
