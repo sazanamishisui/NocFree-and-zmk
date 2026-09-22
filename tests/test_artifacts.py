@@ -210,7 +210,8 @@ class SourceConfigurationTest(unittest.TestCase):
         )
         self.assertEqual(matrix.count("CONFIG_NOCFREE_BATTERY_DIAGNOSTIC=y"), 1)
         self.assertIn("CONFIG_ZMK_USB_LOGGING=y", matrix)
-        self.assertIn("CONFIG_ZMK_LOG_LEVEL=3", matrix)
+        self.assertIn("CONFIG_ZMK_LOGGING_MINIMAL=y", matrix)
+        self.assertNotIn("CONFIG_ZMK_LOG_LEVEL=", matrix)
 
         workflow = WORKFLOW.read_text()
         self.assertIn("/tmp/ws/build/dongle_battery_diagnostic", workflow)
@@ -649,7 +650,7 @@ class BatteryDiagnosticArtifactTest(unittest.TestCase):
         config = kconfig("dongle_battery_diagnostic")
         self.assertEqual(config.get("CONFIG_NOCFREE_BATTERY_DIAGNOSTIC"), "y")
         self.assertEqual(config.get("CONFIG_ZMK_USB_LOGGING"), "y")
-        self.assertEqual(config.get("CONFIG_ZMK_LOG_LEVEL"), "3")
+        self.assertEqual(config.get("CONFIG_ZMK_LOGGING_MINIMAL"), "y")
         self.assertEqual(config.get("CONFIG_ZMK_STUDIO"), "y")
         self.assertEqual(
             config.get("CONFIG_ZMK_SPLIT_BLE_CENTRAL_BATTERY_LEVEL_FETCHING"),

@@ -5,6 +5,8 @@
 - Added a separate `nocfree_and_dongle_battery_diagnostic.uf2` image.
 - The diagnostic dongle retains the normal keymap, ZMK Studio, USB/Bluetooth
   switching and layer LED while enabling USB CDC logging temporarily.
+- Uses ZMK's user-configurable minimal-logging mode so unrelated debug traffic
+  is suppressed while the dedicated battery module remains at INFO level.
 - Added a dongle-only event listener that prints the split source index and
   received percentage as `NOCFREE_BATTERY peripheral=N level=P%`.
 - Kept logging and the diagnostic listener disabled in the normal dongle image.
