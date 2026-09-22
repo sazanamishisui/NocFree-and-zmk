@@ -17,27 +17,32 @@
         compatible = "nocfree,kscan-pca9555";
         status = "okay";
 
-        expanders = <&pca20>, <&pca22>, <&pca24>;
+        /* Verified on the user's Pad: only 0x20 and 0x22 respond. */
+        expanders = <&pca20>, <&pca22>;
 
         poll-period-ms = <10>;
         debounce-scan-period-ms = <3>;
         debounce-press-ms = <5>;
         debounce-release-ms = <5>;
 
-        /* Six physical rows: 4, 4, 4, 3, 4 and 2 populated inputs. */
+        /*
+         * Live wiring probe result, in physical reading order:
+         *   rows 1-4 use 0x20 bits 0-14; bit 15 is unpopulated;
+         *   rows 5-6 use 0x22 bits 0-5.
+         */
         key-inputs =
             /* Num Lock, F3, F4, F7 */
             <&pca20 0>, <&pca20 1>, <&pca20 2>, <&pca20 3>,
             /* Esc, divide, multiply, subtract */
-            <&pca20 8>, <&pca20 9>, <&pca20 10>, <&pca20 11>,
+            <&pca20 4>, <&pca20 5>, <&pca20 6>, <&pca20 7>,
             /* 7, 8, 9, add */
-            <&pca22 0>, <&pca22 1>, <&pca22 2>, <&pca22 3>,
+            <&pca20 8>, <&pca20 9>, <&pca20 10>, <&pca20 11>,
             /* 4, 5, 6 */
-            <&pca22 8>, <&pca22 9>, <&pca22 10>,
+            <&pca20 12>, <&pca20 13>, <&pca20 14>,
             /* 1, 2, 3, enter */
-            <&pca24 0>, <&pca24 1>, <&pca24 2>, <&pca24 3>,
+            <&pca22 0>, <&pca22 1>, <&pca22 2>, <&pca22 3>,
             /* 0, decimal */
-            <&pca24 8>, <&pca24 9>;
+            <&pca22 4>, <&pca22 5>;
     };
 };
 

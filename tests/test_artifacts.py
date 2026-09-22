@@ -73,6 +73,8 @@ class SourceConfigurationTest(unittest.TestCase):
         pad = PAD_DTS.read_text()
         self.assertIn("col-offset = <85>", pad)
         self.assertEqual(len(re.findall(r"<&pca(?:20|22|24)\s+\d+>", pad)), 21)
+        self.assertIn("expanders = <&pca20>, <&pca22>;", pad)
+        self.assertNotRegex(pad, r"<&pca24\s+\d+>")
 
         keymap = PAD_KEYMAP.read_text()
         bindings = re.search(r"bindings\s*=\s*<(.*?)>;", keymap, re.S)

@@ -282,8 +282,13 @@ class BusTest(unittest.TestCase):
             self.assertIsNotNone(expanders, path.name)
             declared = set(re.findall(r"&(\w+)", expanders.group(1)))
             used = {label for label, _ in key_inputs(path)}
+            expected = (
+                spec.PAD_EXPANDERS
+                if path == PAD_DTS
+                else set(spec.EXPANDER_ADDRESSES)
+            )
             with self.subTest(path.name):
-                self.assertEqual(declared, set(spec.EXPANDER_ADDRESSES))
+                self.assertEqual(declared, expected)
                 self.assertTrue(used <= declared)
 
 

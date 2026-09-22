@@ -54,7 +54,14 @@ def key_inputs(counts: list[int]) -> list[tuple[str, int]]:
 
 LEFT_INPUTS = key_inputs(LEFT_COUNTS)
 RIGHT_INPUTS = key_inputs(RIGHT_COUNTS)
-PAD_INPUTS = key_inputs(PAD_COUNTS)
+# Verified directly with the v0.6.3/v0.6.4 USB wiring probe. The first four
+# physical rows occupy 0x20 bits 0-14, bit 15 is unused, and the final two rows
+# occupy 0x22 bits 0-5. This Pad has no responder at 0x24.
+PAD_INPUTS = [
+    *(("pca20", bit) for bit in range(15)),
+    *(("pca22", bit) for bit in range(6)),
+]
+PAD_EXPANDERS = {"pca20", "pca22"}
 
 
 def unused_bits(counts: list[int]) -> dict[str, set[int]]:
@@ -67,7 +74,11 @@ def unused_bits(counts: list[int]) -> dict[str, set[int]]:
 
 LEFT_UNUSED = unused_bits(LEFT_COUNTS)
 RIGHT_UNUSED = unused_bits(RIGHT_COUNTS)
-PAD_UNUSED = unused_bits(PAD_COUNTS)
+PAD_UNUSED = {
+    "pca20": {15},
+    "pca22": set(range(6, 16)),
+    "pca24": set(ALL_BITS),
+}
 
 
 def transform_positions() -> list[int]:
