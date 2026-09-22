@@ -147,6 +147,12 @@ LED for low battery yet. Keeping measurement and indication separate makes the
 first hardware test easier to attribute. Pad battery reporting also remains
 disabled until its exact factory firmware/hardware revision is confirmed.
 
+The pinned ZMK revision omits the peripheral-battery event implementation when
+a central fetches split battery levels but has no local battery of its own.
+`src/peripheral_battery_event_compat.c` supplies that event definition only for
+this USB-powered dongle configuration; it does not create a fictitious XIAO
+battery or touch any GPIO.
+
 ### Conservative first battery test
 
 Do not flash until all three GitHub Actions jobs are green. Keep the v0.6.5 and

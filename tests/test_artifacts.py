@@ -160,6 +160,27 @@ class SourceConfigurationTest(unittest.TestCase):
         self.assertIsNotNone(dongle_block)
         self.assertIn("src/layer_led_indicator.c", dongle_block.group(1))
 
+    def test_dongle_defines_the_missing_peripheral_battery_event(self):
+        source = (ROOT / "src" / "peripheral_battery_event_compat.c").read_text()
+        self.assertIn(
+            "ZMK_EVENT_IMPL(zmk_peripheral_battery_state_changed)", source
+        )
+        self.assertIn(
+            "CONFIG_ZMK_SPLIT_BLE_CENTRAL_BATTERY_LEVEL_FETCHING", source
+        )
+        self.assertIn("!IS_ENABLED(CONFIG_ZMK_BATTERY_REPORTING)", source)
+
+        cmake = (ROOT / "CMakeLists.txt").read_text()
+        dongle_block = re.search(
+            r"if\(CONFIG_SHIELD_NOCFREE_AND_DONGLE\)(.*?)endif\(\)",
+            cmake,
+            re.S,
+        )
+        self.assertIsNotNone(dongle_block)
+        self.assertIn(
+            "src/peripheral_battery_event_compat.c", dongle_block.group(1)
+        )
+
     def test_editable_studio_layers_and_toggle_keys_exist(self):
         text = KEYMAP.read_text()
         for layer in ("navigation_layer", "numpad_layer", "work_layer"):
@@ -387,6 +408,9 @@ class ArtifactTest(unittest.TestCase):
                 self.assertEqual(config.get("CONFIG_ZMK_BATTERY_VOLTAGE_DIVIDER"), "y")
                 self.assertEqual(config.get("CONFIG_ADC"), "y")
                 self.assertEqual(config.get("CONFIG_BT_BAS"), "y")
+
+        dongle_map = (role_dir("dongle") / "zmk.map").read_text(errors="replace")
+        self.assertIn("peripheral_battery_event_compat.c.obj", dongle_map)
 
     def test_compiled_battery_nodes_keep_exact_factory_pinout(self):
         for role, enable_pin in (("left", 5), ("right", 31)):

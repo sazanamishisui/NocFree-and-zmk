@@ -15,6 +15,10 @@
   it again even when the ADC read fails.
 - Enabled peripheral Battery Service fetching on the XIAO dongle so later
   low-battery indication can consume left/right battery events.
+- Added a dongle-only compatibility event definition for the pinned ZMK
+  revision. That revision calls the peripheral-battery event while fetching,
+  but otherwise links its implementation only when the central reports a local
+  battery; the USB-powered XIAO intentionally has no local battery source.
 - Deliberately left Pad battery reporting disabled until its exact factory
   firmware/hardware revision is confirmed.
 - Did not alter the XIAO layer LED, keymap, scanner, debounce, output switching,
