@@ -194,7 +194,8 @@ class SourceConfigurationTest(unittest.TestCase):
         self.assertIn("gpio_pin_set_dt(&divider_enable, 1)", source)
         self.assertIn("off_raw=%d off_pin_mv=%d", source)
         self.assertIn("on_raw=%d on_pin_mv=%d", source)
-        self.assertIn("factory_mv=%d current_zmk_mv=%d", source)
+        self.assertIn("previous_mv=%d calibrated_mv=%d", source)
+        self.assertIn("on_pin_mv * 3) / 2", source)
         self.assertIn("K_SECONDS(5)", source)
 
         kconfig = (ROOT / "Kconfig").read_text()
@@ -469,7 +470,7 @@ class ArtifactTest(unittest.TestCase):
         self.assertNotIn("peripheral_battery_event_compat.c.obj", dongle_map)
         self.assertNotIn("(battery_diagnostic.c.obj)", dongle_map)
 
-    def test_compiled_battery_nodes_keep_exact_factory_pinout(self):
+    def test_compiled_battery_nodes_keep_verified_pinout_and_calibration(self):
         for role, enable_pin in (("left", 5), ("right", 31)):
             text = (role_dir(role) / "zephyr.dts").read_text()
             node = re.search(r"vbatt: vbatt \{(.*?)\n\s*\};", text, re.S)
@@ -478,8 +479,8 @@ class ArtifactTest(unittest.TestCase):
                 values = node.group(1)
                 self.assertIn('compatible = "zmk,battery-voltage-divider"', values)
                 self.assertRegex(values, r"io-channels = < &adc 0x2 >")
-                self.assertRegex(values, r"output-ohms = < 0x78 >")
-                self.assertRegex(values, r"full-ohms = < 0x8f >")
+                self.assertRegex(values, r"output-ohms = < 0x2 >")
+                self.assertRegex(values, r"full-ohms = < 0x3 >")
                 self.assertRegex(
                     values,
                     rf"power-gpios = < &gpio0 0x{enable_pin:x} 0x0 >",

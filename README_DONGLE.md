@@ -137,21 +137,19 @@ the result over the split BLE Battery Service. Both use `P0.04/AIN2`; the
 active-high enable is `P0.05` on the left and `P0.31` on the right. The divider
 is inactive at boot and between the default 60-second samples.
 
-Factory firmware calculates a 4290 mV ADC full scale (`3300 × 130/100`). ZMK's
-nRF SAADC driver uses 3600 mV as its base, so the devicetree uses the effective
-`143/120` calibration ratio: `3600 × 143/120 = 4290`. Those reduced integers
-are calibration values, not a claim about the physical resistor values.
+The factory firmware established the pinout, but its ADC scaling cannot be
+transferred directly to ZMK's differently configured nRF SAADC. v0.7.3 local
+probes measured approximately 2.79--2.82 V at AIN2 on both freshly charged
+halves. v0.7.4 therefore uses the effective `3/2` full/output calibration ratio,
+which produces approximately 4.18--4.23 V. The reduced integers are calibration
+values, not a claim about the physical resistor values.
 
-The XIAO fetches the two peripheral battery values but does not change its RGB
-LED for low battery yet. Keeping measurement and indication separate makes the
-first hardware test easier to attribute. Pad battery reporting also remains
-disabled until its exact factory firmware/hardware revision is confirmed.
-
-The pinned ZMK revision omits the peripheral-battery event implementation when
-a central fetches split battery levels but has no local battery of its own.
-`src/peripheral_battery_event_compat.c` supplies that event definition only for
-this USB-powered dongle configuration; it does not create a fictitious XIAO
-battery or touch any GPIO.
+Peripheral battery fetching remains disabled on the XIAO. The pinned ZMK
+revision can turn an invalid peripheral lookup into source index 234 and then
+write outside its battery array. This is a dongle software/RAM safety issue,
+not an electrical measurement issue. A safe low-battery consumer will be added
+separately; Pad battery reporting also remains disabled until its exact factory
+firmware/hardware revision is confirmed.
 
 The upstream XIAO board devicetree already contains its own `vbatt` node. It
 therefore remains visible in compiled devicetree output, but this firmware keeps
@@ -173,8 +171,9 @@ split device fails to reconnect.
 4. Leave the Pad on v0.6.5; v0.7 contains no Pad battery node.
 
 An inaccurate percentage is a calibration problem, not evidence of electrical
-damage. The separate v0.7.1 diagnostic dongle described below makes the fetched
-values visible without adding permanent logging overhead to the normal image.
+damage. Use only the local USB diagnostic images described below; the earlier
+central diagnostic dongle is retained here for historical reference and must
+not be flashed on the pinned ZMK revision.
 
 ## Temporary battery diagnostic dongle in v0.7.1
 

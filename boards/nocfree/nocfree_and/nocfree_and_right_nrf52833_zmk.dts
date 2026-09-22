@@ -17,16 +17,16 @@
      *   Arduino D15 -> P0.04/AIN2 (battery-divider output)
      *   Arduino D16 -> P0.31      (active-high divider enable)
      *
-     * Factory conversion is raw * 3300 / 4095 * 130 / 100 = 4290 mV at
-     * full scale. ZMK's nRF SAADC driver uses a 3600 mV full scale, so the
-     * reduced 120:143 calibration gives the same 4290 mV result. These are
-     * effective calibration values, not physical resistor measurements.
+     * v0.7.3 hardware measurements found about 2.79 V at AIN2 immediately
+     * after charging. An effective 3:2 full/output ratio converts that to
+     * about 4.18 V. These reduced values are calibration values, not a claim
+     * about the physical resistor values.
      */
     vbatt: vbatt {
         compatible = "zmk,battery-voltage-divider";
         io-channels = <&adc 2>;
-        output-ohms = <120>;
-        full-ohms = <143>;
+        output-ohms = <2>;
+        full-ohms = <3>;
         power-gpios = <&gpio0 31 GPIO_ACTIVE_HIGH>;
     };
 

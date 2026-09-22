@@ -416,7 +416,7 @@ class RoleTest(unittest.TestCase):
                     self.assertNotIn(forbidden, config)
 
     def test_verified_battery_measurement_wiring_is_exact(self):
-        """Pinout and effective factory-equivalent calibration stay exact.
+        """Verified pinout and hardware-derived calibration stay exact.
 
         A wrong enable GPIO is the one battery change that could create output
         contention, so keep this intentionally strict and board-specific.
@@ -431,8 +431,8 @@ class RoleTest(unittest.TestCase):
                 self.assertIn("zmk,battery = &vbatt", text)
                 self.assertIn('compatible = "zmk,battery-voltage-divider"', text)
                 self.assertRegex(text, r"io-channels\s*=\s*<&adc\s+2>")
-                self.assertRegex(text, r"output-ohms\s*=\s*<120>")
-                self.assertRegex(text, r"full-ohms\s*=\s*<143>")
+                self.assertRegex(text, r"output-ohms\s*=\s*<2>")
+                self.assertRegex(text, r"full-ohms\s*=\s*<3>")
                 self.assertRegex(
                     text,
                     rf"power-gpios\s*=\s*<&gpio0\s+{enable_pin}\s+GPIO_ACTIVE_HIGH>",

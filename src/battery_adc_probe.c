@@ -93,15 +93,15 @@ static void battery_adc_probe_work(struct k_work *work) {
         goto reschedule;
     }
 
-    const int32_t factory_mv =
-        (int32_t)(((int64_t)on_raw * 3300 * 130) / (4095 * 100));
-    const int32_t current_zmk_mv =
+    const int32_t previous_mv =
         (int32_t)(((int64_t)on_pin_mv * 143) / 120);
+    const int32_t calibrated_mv =
+        (int32_t)(((int64_t)on_pin_mv * 3) / 2);
 
     LOG_INF("NOCFREE_ADC_PROBE off_raw=%d off_pin_mv=%d "
-            "on_raw=%d on_pin_mv=%d factory_mv=%d current_zmk_mv=%d",
-            off_raw, off_pin_mv, on_raw, on_pin_mv, factory_mv,
-            current_zmk_mv);
+            "on_raw=%d on_pin_mv=%d previous_mv=%d calibrated_mv=%d",
+            off_raw, off_pin_mv, on_raw, on_pin_mv, previous_mv,
+            calibrated_mv);
 
 reschedule:
     /* The divider is inactive between samples, including every error path. */

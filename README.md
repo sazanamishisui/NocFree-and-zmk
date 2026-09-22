@@ -153,7 +153,7 @@ In the current code, these SPI signals are used only by the left external nRF24L
 
 ## 5. Battery Measurement Parameters
 
-Factory firmware v2.4.5 uses a 12-bit ADC. It drives the divider-enable pin high before sampling and calculates a 4290 mV full-scale value (`3300 × 130/100`). v0.7 reproduces that total calibration on the left and right halves with an effective `143/120` ratio because ZMK's nRF SAADC driver starts from 3600 mV. These are calibration values rather than measured resistor values. The Pad remains disabled pending exact revision confirmation.
+Factory firmware v2.4.5 established the ADC and divider-enable pinout, but its ADC scaling cannot be transferred directly to ZMK's differently configured nRF SAADC. v0.7.3 measurements found about 2.80 V at AIN2 on both freshly charged halves. v0.7.4 therefore uses an effective `3/2` full/output ratio, producing approximately 4.18–4.23 V. These are calibration values rather than measured resistor values. The Pad remains disabled pending exact revision confirmation.
 
 These values come from the current firmware and do not replace a complete schematic. Calibrate the ADC reference voltage, divider ratio, battery curve, charge-state detection, and low-voltage threshold against the target hardware revision.
 

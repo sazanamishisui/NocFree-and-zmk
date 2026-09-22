@@ -12,8 +12,8 @@ This diagnostic measures AIN2 twice per cycle:
 1. divider enable inactive, after 100 ms of settling;
 2. divider enable active, after the established 10 ms settling delay.
 
-It prints the unscaled ADC count, voltage at the ADC pin, factory conversion,
-and the conversion currently used by v0.7.2.
+It prints the unscaled ADC count, voltage at the ADC pin, the previous v0.7.2
+conversion, and the hardware-calibrated v0.7.4 conversion.
 
 ## Safety boundary
 
@@ -35,10 +35,16 @@ artifacts are all green.
 ## Expected log format
 
 ```text
-NOCFREE_ADC_PROBE off_raw=12 off_pin_mv=10 on_raw=3200 on_pin_mv=2812 factory_mv=3352 current_zmk_mv=3351
+NOCFREE_ADC_PROBE off_raw=12 off_pin_mv=10 on_raw=3200 on_pin_mv=2812 previous_mv=3351 calibrated_mv=4218
 ```
 
 The numbers above are examples only.
+
+Hardware logs from both halves verified that the divider output falls to
+approximately 0 V while disabled and rises to approximately 2.79--2.82 V while
+enabled. Immediately after charging, the effective `3/2` conversion produces
+approximately 4.18--4.23 V; the previous `143/120` conversion incorrectly
+reported approximately 3.33--3.36 V.
 
 The most important comparison is `off_raw` versus `on_raw`:
 

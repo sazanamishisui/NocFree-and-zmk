@@ -1,3 +1,22 @@
+# v0.7.4 battery calibration patch contents
+
+## Changes in v0.7.4
+
+- Replaced the provisional `143/120` left/right voltage conversion with an
+  effective `3/2` full/output ratio derived from v0.7.3 measurements.
+- Verified both halves independently: the disabled divider measured about
+  0 V, while the enabled AIN2 input measured about 2.79--2.82 V immediately
+  after charging. The new ratio converts those values to about 4.18--4.23 V.
+- Updated the standalone ADC probes to print both `previous_mv` and
+  `calibrated_mv`, avoiding the invalid comparison of raw counts from
+  differently configured ADC implementations.
+- Kept the verified pinout unchanged: P0.04/AIN2 on both halves, with
+  active-high enable on P0.05 left and P0.31 right.
+- Kept the divider disabled at boot, between samples, and on probe error paths.
+- Kept unsafe split-central battery fetching disabled on the XIAO dongle.
+- Did not alter the key scanners, debounce, split links, Pad, keymap, Studio,
+  USB/Bluetooth output switching, layer LED, pairing data, or sleep policy.
+
 # v0.7.1 diagnostic patch contents
 
 ## Changes in v0.7.1
