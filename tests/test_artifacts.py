@@ -465,7 +465,7 @@ class ArtifactTest(unittest.TestCase):
 
         dongle_map = (role_dir("dongle") / "zmk.map").read_text(errors="replace")
         self.assertNotIn("peripheral_battery_event_compat.c.obj", dongle_map)
-        self.assertNotIn("battery_diagnostic.c.obj", dongle_map)
+        self.assertNotIn("(battery_diagnostic.c.obj)", dongle_map)
 
     def test_compiled_battery_nodes_keep_exact_factory_pinout(self):
         for role, enable_pin in (("left", 5), ("right", 31)):
@@ -682,7 +682,7 @@ class BatteryDiagnosticArtifactTest(unittest.TestCase):
             mapfile = (role_dir(role) / "zmk.map").read_text(errors="replace")
             with self.subTest(role):
                 self.assertIn("local_battery_diagnostic.c.obj", mapfile)
-                self.assertNotIn("battery_diagnostic.c.obj", mapfile)
+                self.assertNotIn("(battery_diagnostic.c.obj)", mapfile)
                 self.assertNotIn("peripheral_battery_event_compat.c.obj", mapfile)
 
     def test_diagnostic_uf2s_stay_inside_application_partition(self):
