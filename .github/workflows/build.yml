@@ -125,7 +125,6 @@ jobs:
             -DCONFIG_ZMK_BLE=n \
             -DCONFIG_ZMK_USB=y \
             -DCONFIG_ZMK_BATTERY_REPORTING=n \
-            -DCONFIG_SENSOR=n \
             -DCONFIG_ADC=y \
             -DCONFIG_USB_DEVICE_INITIALIZE_AT_BOOT=n \
             -DCONFIG_ZMK_USB_LOGGING=y \
@@ -141,7 +140,6 @@ jobs:
             -DCONFIG_ZMK_BLE=n \
             -DCONFIG_ZMK_USB=y \
             -DCONFIG_ZMK_BATTERY_REPORTING=n \
-            -DCONFIG_SENSOR=n \
             -DCONFIG_ADC=y \
             -DCONFIG_USB_DEVICE_INITIALIZE_AT_BOOT=n \
             -DCONFIG_ZMK_USB_LOGGING=y \
