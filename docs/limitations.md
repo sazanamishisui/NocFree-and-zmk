@@ -2,16 +2,16 @@
 
 # Limitations
 
-This is a baseline: an ANSI left/right keyboard over Bluetooth, and nothing
-else. Everything below is deliberately absent.
+This remains a conservative community port. The verified left/right battery
+divider is now supported, while unrelated power and lighting controls remain
+deliberately absent.
 
 ## Not implemented
 
 | | Why |
 |---|---|
-| Numpad | Separate device; not part of this slice. |
 | Factory USB receiver, ESB / 2.4 GHz | Needs a proprietary protocol and pairing data ported. |
-| Battery reporting | ADC and divider-enable pins unverified; the divider must never be left on. |
+| Pad battery reporting | Candidate firmware matches the right-half circuit, but the Pad's exact factory firmware/hardware revision is not confirmed. |
 | Backlight | Needs a verified PWM polarity. Driving it wrong is a hardware risk. |
 | Status LEDs, charge indicator | Same: unverified output pins and polarity. |
 | Mode switch | The left half's three-position switch has no verified electrical role. |
@@ -19,8 +19,9 @@ else. Everything below is deliberately absent.
 | Deep sleep / soft off | Needs a wake source; the expander `INT` line is unused. |
 | Gaming / low-latency modes | Out of scope for a baseline. |
 
-No output pin is driven anywhere in this port. Optional and unverified hardware
-is left alone rather than configured with a guess.
+The only newly driven outputs are the factory-verified battery-divider enables:
+left `P0.05` and right `P0.31`. They initialize inactive and are asserted only
+during a measurement. Optional and unverified hardware remains untouched.
 
 ## Known rough edges
 
@@ -92,6 +93,6 @@ one host operating system, and one hardware revision.
   USB power, and no battery life figures are claimed.
 - Reconnection after a power cycle, and rollback to factory firmware, have not
   been exercised.
-- No battery life, latency, idle current, or endurance figures.
+- No battery-life, ADC-calibration, latency, idle-current or endurance figures.
 - No Windows or Linux compatibility claims.
 - No claim about any other unit or hardware revision.

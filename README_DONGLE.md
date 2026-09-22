@@ -127,8 +127,43 @@ consume either keyboard half's battery.
 The implementation uses the XIAO board's Zephyr devicetree LED aliases rather
 than hard-coded GPIO polarity. It is compiled only for
 `CONFIG_SHIELD_NOCFREE_AND_DONGLE`; the left and right firmware images are
-unchanged. Brightness control is intentionally deferred: v0.5.0 first tests
+unchanged by the indicator itself. Brightness control is intentionally deferred: v0.5.0 first tests
 whether the onboard LED is visible and comfortable in normal use.
+
+## Left/right battery reporting in v0.7.0
+
+The two keyboard halves now measure their verified battery dividers and expose
+the result over the split BLE Battery Service. Both use `P0.04/AIN2`; the
+active-high enable is `P0.05` on the left and `P0.31` on the right. The divider
+is inactive at boot and between the default 60-second samples.
+
+Factory firmware calculates a 4290 mV ADC full scale (`3300 × 130/100`). ZMK's
+nRF SAADC driver uses 3600 mV as its base, so the devicetree uses the effective
+`143/120` calibration ratio: `3600 × 143/120 = 4290`. Those reduced integers
+are calibration values, not a claim about the physical resistor values.
+
+The XIAO fetches the two peripheral battery values but does not change its RGB
+LED for low battery yet. Keeping measurement and indication separate makes the
+first hardware test easier to attribute. Pad battery reporting also remains
+disabled until its exact factory firmware/hardware revision is confirmed.
+
+### Conservative first battery test
+
+Do not flash until all three GitHub Actions jobs are green. Keep the v0.6.5 and
+factory UF2 files available, and do not use a settings-reset image unless a
+split device fails to reconnect.
+
+1. Flash the normal v0.7 dongle image, then the normal v0.7 left image only.
+2. Confirm left/right/Pad input and USB/Bluetooth output switching, then use the
+   keyboard for at least ten minutes. Power the left half off immediately if it
+   becomes warm, disconnects repeatedly, or drains unusually quickly.
+3. If normal, flash the normal right image and repeat the checks.
+4. Leave the Pad on v0.6.5; v0.7 contains no Pad battery node.
+
+An inaccurate percentage is a calibration problem, not evidence of electrical
+damage. A future low-battery indicator or logging build will make the fetched
+left/right values visible; this version intentionally only measures and sends
+them.
 
 ## Important topology change
 
@@ -144,8 +179,8 @@ HID device.
 
 ## First build gate — do not flash before it is green
 
-1. Overlay these files onto the `v0.6-numpad-integration` branch created from
-   the released v0.5.0 source.
+1. Apply these files to the `v0.7-battery-monitor` branch created from the
+   released v0.6.5 source.
 2. Push to GitHub.
 3. Confirm **Validate sources**, **Firmware**, and **Verify built artifacts**
    all pass.

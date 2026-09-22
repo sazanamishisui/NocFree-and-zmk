@@ -162,11 +162,13 @@ geometry would be worse than none.
 | 32.768 kHz from the internal RC oscillator | No crystal is confirmed fitted; selecting an absent one stops BLE. |
 | No DC/DC regulator mode | Requires external inductors this port cannot confirm are present. |
 | Default radio transmit power | Raising it is an unmeasured power and emissions change. |
-| No backlight, LED, battery or mode-switch nodes | Each needs an output pin or polarity this port has not verified. |
+| No backlight, status-LED or mode-switch nodes | Their output pins or polarity remain unverified. |
+| Battery divider only on verified halves | Factory v2.4.5 confirms AIN2 plus the distinct left/right active-high enable pins. |
 | 100 kHz I2C | See above. |
 
-Nothing in this port drives an output pin. The only pins it configures at all
-are `P0.11` and `P1.09` for I2C, both published by NocFree.
+In addition to the I2C pins, the port drives only the verified battery-divider
+enable (`P0.05` left, `P0.31` right). Each is inactive at boot and between the
+once-per-minute battery samples.
 
 ## Flash layout
 

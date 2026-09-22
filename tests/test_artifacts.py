@@ -371,13 +371,50 @@ class ArtifactTest(unittest.TestCase):
         self.assertNotEqual(kconfig("pad").get("CONFIG_ZMK_STUDIO"), "y")
         self.assertEqual(kconfig("dongle").get("CONFIG_ZMK_STUDIO"), "y")
 
+    def test_battery_monitoring_is_enabled_only_for_verified_halves(self):
+        self.assertEqual(kconfig("left").get("CONFIG_ZMK_BATTERY_REPORTING"), "y")
+        self.assertEqual(kconfig("right").get("CONFIG_ZMK_BATTERY_REPORTING"), "y")
+        self.assertNotEqual(kconfig("pad").get("CONFIG_ZMK_BATTERY_REPORTING"), "y")
+        self.assertNotEqual(kconfig("dongle").get("CONFIG_ZMK_BATTERY_REPORTING"), "y")
+        self.assertEqual(
+            kconfig("dongle").get("CONFIG_ZMK_SPLIT_BLE_CENTRAL_BATTERY_LEVEL_FETCHING"),
+            "y",
+        )
+
+        for role in ("left", "right"):
+            config = kconfig(role)
+            with self.subTest(role):
+                self.assertEqual(config.get("CONFIG_ZMK_BATTERY_VOLTAGE_DIVIDER"), "y")
+                self.assertEqual(config.get("CONFIG_ADC"), "y")
+                self.assertEqual(config.get("CONFIG_BT_BAS"), "y")
+
+    def test_compiled_battery_nodes_keep_exact_factory_pinout(self):
+        for role, enable_pin in (("left", 5), ("right", 31)):
+            text = (role_dir(role) / "zephyr.dts").read_text()
+            node = re.search(r"vbatt: vbatt \{(.*?)\n\s*\};", text, re.S)
+            with self.subTest(role):
+                self.assertIsNotNone(node)
+                values = node.group(1)
+                self.assertIn('compatible = "zmk,battery-voltage-divider"', values)
+                self.assertRegex(values, r"io-channels = < &adc 0x2 >")
+                self.assertRegex(values, r"output-ohms = < 0x78 >")
+                self.assertRegex(values, r"full-ohms = < 0x8f >")
+                self.assertRegex(
+                    values,
+                    rf"power-gpios = < &gpio0 0x{enable_pin:x} 0x0 >",
+                )
+
+        for role in ("pad", "dongle"):
+            text = (role_dir(role) / "zephyr.dts").read_text()
+            with self.subTest(role):
+                self.assertNotIn('compatible = "zmk,battery-voltage-divider"', text)
+
     def test_excluded_features_are_absent(self):
         for role in self.ROLES:
             config = kconfig(role)
             for symbol in (
                 "CONFIG_ZMK_BACKLIGHT",
                 "CONFIG_ZMK_RGB_UNDERGLOW",
-                "CONFIG_ZMK_BATTERY_REPORTING",
             ):
                 with self.subTest(f"{role} {symbol}"):
                     self.assertNotEqual(config.get(symbol), "y")

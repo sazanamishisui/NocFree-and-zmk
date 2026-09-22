@@ -5,8 +5,31 @@
  */
 
 #include "nocfree_and.dtsi"
+#include <zephyr/dt-bindings/gpio/gpio.h>
 
 / {
+    chosen {
+        zmk,battery = &vbatt;
+    };
+
+    /*
+     * Factory firmware v2.4.5 evidence:
+     *   Arduino D15 -> P0.04/AIN2 (battery-divider output)
+     *   Arduino D16 -> P0.05      (active-high divider enable)
+     *
+     * Factory conversion is raw * 3300 / 4095 * 130 / 100 = 4290 mV at
+     * full scale. ZMK's nRF SAADC driver uses a 3600 mV full scale, so the
+     * reduced 120:143 calibration gives the same 4290 mV result. These are
+     * effective calibration values, not physical resistor measurements.
+     */
+    vbatt: vbatt {
+        compatible = "zmk,battery-voltage-divider";
+        io-channels = <&adc 2>;
+        output-ohms = <120>;
+        full-ohms = <143>;
+        power-gpios = <&gpio0 5 GPIO_ACTIVE_HIGH>;
+    };
+
     /*
      * Key positions, in KSCAN column order. The list index is the column, so
      * unpopulated expander bits are excluded simply by being absent -- there is
@@ -44,6 +67,10 @@
             /* Bottom row: pca24 port 1, columns 32-36 */
             <&pca24 8>, <&pca24 9>, <&pca24 10>, <&pca24 11>, <&pca24 12>;
     };
+};
+
+&adc {
+    status = "okay";
 };
 
 &ansi_layout {

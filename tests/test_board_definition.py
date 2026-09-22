@@ -389,12 +389,11 @@ class RoleTest(unittest.TestCase):
                 self.assertNotIn("K32SRC_XTAL", text)
 
     def test_unverified_hardware_stays_disabled(self):
-        """No output pin, regulator mode or radio power is asserted anywhere."""
+        """Only the factory-verified battery control outputs may be asserted."""
         text = " ".join(read(p) for p in BOARD.glob("*.dts*"))
         for forbidden in (
             "zmk,backlight",
             "zmk,underglow",
-            "zmk,battery",
             "pwm-leds",
             "gpio-leds",
             "regulator-initial-mode",
@@ -416,9 +415,41 @@ class RoleTest(unittest.TestCase):
                 with self.subTest(f"{name.name} {forbidden}"):
                     self.assertNotIn(forbidden, config)
 
-            # This one defaults on, so it has to be turned off explicitly.
-            with self.subTest(f"{name.name} battery"):
-                self.assertIn("CONFIG_ZMK_BATTERY_REPORTING=n", config)
+    def test_verified_battery_measurement_wiring_is_exact(self):
+        """Pinout and effective factory-equivalent calibration stay exact.
+
+        A wrong enable GPIO is the one battery change that could create output
+        contention, so keep this intentionally strict and board-specific.
+        """
+        expected = (
+            (LEFT_DTS, 5),
+            (RIGHT_DTS, 31),
+        )
+        for path, enable_pin in expected:
+            text = read(path)
+            with self.subTest(path.name):
+                self.assertIn("zmk,battery = &vbatt", text)
+                self.assertIn('compatible = "zmk,battery-voltage-divider"', text)
+                self.assertRegex(text, r"io-channels\s*=\s*<&adc\s+2>")
+                self.assertRegex(text, r"output-ohms\s*=\s*<120>")
+                self.assertRegex(text, r"full-ohms\s*=\s*<143>")
+                self.assertRegex(
+                    text,
+                    rf"power-gpios\s*=\s*<&gpio0\s+{enable_pin}\s+GPIO_ACTIVE_HIGH>",
+                )
+                self.assertRegex(text, r"&adc\s*\{\s*status\s*=\s*\"okay\"")
+
+        self.assertNotIn("zmk,battery", read(PAD_DTS))
+        self.assertNotIn("vbatt", read(PAD_DTS))
+
+        configs = {
+            "left": (BOARD / "nocfree_and_left_nrf52833_zmk_defconfig").read_text(),
+            "right": (BOARD / "nocfree_and_right_nrf52833_zmk_defconfig").read_text(),
+            "pad": (BOARD / "nocfree_and_pad_nrf52833_zmk_defconfig").read_text(),
+        }
+        self.assertIn("CONFIG_ZMK_BATTERY_REPORTING=y", configs["left"])
+        self.assertIn("CONFIG_ZMK_BATTERY_REPORTING=y", configs["right"])
+        self.assertIn("CONFIG_ZMK_BATTERY_REPORTING=n", configs["pad"])
 
 
 class MetadataTest(unittest.TestCase):

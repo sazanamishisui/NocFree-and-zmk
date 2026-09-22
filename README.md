@@ -153,7 +153,7 @@ In the current code, these SPI signals are used only by the left external nRF24L
 
 ## 5. Battery Measurement Parameters
 
-The current firmware uses a 12-bit ADC. It drives the divider-enable pin high before sampling and converts the measured voltage to battery voltage using a `130/100` scale factor. The port should preserve the enable-on-demand and disable-after-sampling behavior to avoid continuous divider current.
+Factory firmware v2.4.5 uses a 12-bit ADC. It drives the divider-enable pin high before sampling and calculates a 4290 mV full-scale value (`3300 × 130/100`). v0.7 reproduces that total calibration on the left and right halves with an effective `143/120` ratio because ZMK's nRF SAADC driver starts from 3600 mV. These are calibration values rather than measured resistor values. The Pad remains disabled pending exact revision confirmation.
 
 These values come from the current firmware and do not replace a complete schematic. Calibrate the ADC reference voltage, divider ratio, battery curve, charge-state detection, and low-voltage threshold against the target hardware revision.
 
@@ -162,7 +162,7 @@ These values come from the current firmware and do not replace a complete schema
 1. Create separate nRF52833 board/shield configurations for the left and right halves. Verify USB, serial, and the firmware recovery path first.
 2. Enable I²C, confirm that every PCA9555 address can be detected, then verify the interrupt pins and all key inputs.
 3. Configure ZMK split with the left half as central and the right half as peripheral. Complete BLE split input first; a standard ZMK port does not require the external nRF24L01 on the left half.
-4. Add battery measurement, status indicators, and backlighting. Calibrate active levels, PWM polarity, and the battery curve on real hardware.
+4. Validate the newly enabled left/right battery readings on real hardware, then add low-battery indication. Backlighting and charge-status control remain separate work.
 5. Evaluate optional compatibility features such as the mode switch and factory 2.4 GHz receiver last.
 
 ## 7. Pre-Flash Checklist
@@ -185,7 +185,7 @@ Contributors must submit only content they have the right to release under the M
 
 This repository also contains a community ZMK keyboard module, `zmk-keyboard-nocfree-and`, providing a minimum ANSI left/right port built on the interfaces documented above. The left half is the ZMK split central and presents Bluetooth or USB HID to the computer; the right half is a Bluetooth split peripheral. It is community work covered by section 8, not official NocFree firmware, and the disclaimer in section 1 applies in full.
 
-Numpad, factory USB receiver, 2.4 GHz, battery reporting, backlighting, and indicators are deliberately not included.
+The Pad input device and left/right battery reporting are included. Factory USB receiver/2.4 GHz compatibility, Pad battery reporting, backlighting, charge-status control, and low-battery indication are deliberately not included yet.
 
 | Document | Contents |
 |---|---|

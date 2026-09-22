@@ -1,3 +1,25 @@
+# v0.7.0 patch contents
+
+## Changes in v0.7.0
+
+- Enabled battery measurement and BLE Battery Service reporting on the left
+  and right keyboard halves only.
+- Reproduced the factory v2.4.5 pinout: both halves sample `P0.04/AIN2`; the
+  active-high divider enable is `P0.05` on the left and `P0.31` on the right.
+- Matched the factory firmware's verified 4290 mV full-scale conversion with
+  an effective `143/120` ZMK calibration (ZMK's SAADC base is 3600 mV).
+  The reduced devicetree values express only that ratio and do not claim the
+  physical resistor values.
+- Kept the divider disabled at boot and between samples. ZMK's voltage-divider
+  driver enables it only for a sample, waits 10 ms, reads the ADC, then disables
+  it again even when the ADC read fails.
+- Enabled peripheral Battery Service fetching on the XIAO dongle so later
+  low-battery indication can consume left/right battery events.
+- Deliberately left Pad battery reporting disabled until its exact factory
+  firmware/hardware revision is confirmed.
+- Did not alter the XIAO layer LED, keymap, scanner, debounce, output switching,
+  deep-sleep policy or charge-status pins.
+
 # v0.6.0 patch contents
 
 ## Changes in v0.6.0
