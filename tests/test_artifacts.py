@@ -218,9 +218,9 @@ class SourceConfigurationTest(unittest.TestCase):
         self.assertEqual(matrix.count("CONFIG_ADC=y"), 2)
         self.assertNotIn("artifact-name: nocfree_and_dongle_battery_diagnostic", matrix)
         self.assertTrue(BATTERY_DIAG_OVERLAY.is_file())
-        self.assertIn(
-            "zephyr,console = &cdc_acm_uart0", BATTERY_DIAG_OVERLAY.read_text()
-        )
+        overlay = BATTERY_DIAG_OVERLAY.read_text()
+        self.assertIn("zephyr,console = &cdc_acm_uart0", overlay)
+        self.assertRegex(overlay, r"&vbatt\s*\{\s*status = \"disabled\";")
 
         workflow = WORKFLOW.read_text()
         self.assertIn("/tmp/ws/build/left_battery_adc_probe", workflow)

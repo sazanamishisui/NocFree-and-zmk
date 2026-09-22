@@ -7,3 +7,13 @@
         zephyr,shell-uart = &cdc_acm_uart0;
     };
 };
+
+/*
+ * The raw probe owns AIN2 and the divider-enable GPIO directly. Disable the
+ * normal sensor instance so two drivers can never configure or toggle the
+ * same hardware during this temporary diagnostic build. The probe still uses
+ * this node's io-channels and power-gpios metadata at compile time.
+ */
+&vbatt {
+    status = "disabled";
+};
