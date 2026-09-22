@@ -213,10 +213,14 @@ class SourceConfigurationTest(unittest.TestCase):
         self.assertIn('-DKEYMAP_FILE="${pad_diag_keymap}"', workflow)
         self.assertIn("CONFIG_ZMK_USB_LOGGING=y", BUILD_MATRIX.read_text())
         self.assertIn(
+            "-DCONFIG_USB_DEVICE_INITIALIZE_AT_BOOT=n", BUILD_MATRIX.read_text()
+        )
+        self.assertIn(
             "CONFIG_NOCFREE_PAD_I2C_DIAGNOSTIC=y", BUILD_MATRIX.read_text()
         )
         self.assertIn("pad_usb_diag.overlay", BUILD_MATRIX.read_text())
         self.assertIn("CONFIG_ZMK_USB_LOGGING=y", workflow)
+        self.assertIn("-DCONFIG_USB_DEVICE_INITIALIZE_AT_BOOT=n", workflow)
         self.assertIn("CONFIG_NOCFREE_PAD_I2C_DIAGNOSTIC=y", workflow)
         self.assertIn('-DEXTRA_DTC_OVERLAY_FILE="${pad_diag_overlay}"', workflow)
 
@@ -529,6 +533,9 @@ class PadUsbDiagnosticArtifactTest(unittest.TestCase):
         self.assertNotEqual(config.get("CONFIG_ZMK_SPLIT"), "y")
         self.assertEqual(config.get("CONFIG_ZMK_USB"), "y")
         self.assertNotEqual(config.get("CONFIG_ZMK_BLE"), "y")
+        self.assertNotEqual(
+            config.get("CONFIG_USB_DEVICE_INITIALIZE_AT_BOOT"), "y"
+        )
         self.assertEqual(config.get("CONFIG_USB_CDC_ACM"), "y")
         self.assertEqual(config.get("CONFIG_NOCFREE_RECOVERY_CDC_1200_TOUCH"), "y")
         self.assertEqual(config.get("CONFIG_NOCFREE_KSCAN_PCA9555"), "y")

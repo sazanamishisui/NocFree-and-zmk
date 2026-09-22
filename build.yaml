@@ -39,6 +39,7 @@ include:
       -DCONFIG_ZMK_SPLIT=n
       -DCONFIG_ZMK_USB=y
       -DCONFIG_ZMK_BLE=n
+      -DCONFIG_USB_DEVICE_INITIALIZE_AT_BOOT=n
       -DCONFIG_ZMK_USB_LOGGING=y
       -DCONFIG_NOCFREE_PAD_I2C_DIAGNOSTIC=y
       -DEXTRA_DTC_OVERLAY_FILE=${GITHUB_WORKSPACE}/boards/nocfree/nocfree_and/pad_usb_diag.overlay
