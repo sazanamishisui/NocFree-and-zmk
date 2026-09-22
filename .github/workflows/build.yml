@@ -115,6 +115,18 @@ jobs:
             -DCONFIG_ZMK_STUDIO=y \
             -DCONFIG_ZMK_STUDIO_LOCKING=n
 
+          west build -s zmk/app -d /tmp/ws/build/dongle_battery_diagnostic \
+            -b xiao_ble//zmk -S studio-rpc-usb-uart -- \
+            -DSHIELD=nocfree_and_dongle \
+            -DZMK_CONFIG=/tmp/ws/config \
+            -DZMK_EXTRA_MODULES="${GITHUB_WORKSPACE}" \
+            -DKEYMAP_FILE="${dongle_keymap}" \
+            -DCONFIG_ZMK_STUDIO=y \
+            -DCONFIG_ZMK_STUDIO_LOCKING=n \
+            -DCONFIG_ZMK_USB_LOGGING=y \
+            -DCONFIG_ZMK_LOG_LEVEL=3 \
+            -DCONFIG_NOCFREE_BATTERY_DIAGNOSTIC=y
+
       - name: Run the full suite against the build
         run: |
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
