@@ -56,3 +56,10 @@ becomes warm, or charging behavior changes unexpectedly.
 Only after both halves pass will normal firmware subscribe to each half's local
 battery state and request the same open-drain pulse below a conservative
 threshold. XIAO split-central battery fetching remains disabled.
+
+## Build hotfix 01
+
+The first v0.8 upload did not expose ZMK's application include directory to
+the module library, so `zmk/usb.h` was not found while compiling the LED probe.
+Hotfix 01 adds that include directory only when
+`CONFIG_NOCFREE_LOW_BATTERY_LED_PROBE=y`; runtime behavior is unchanged.

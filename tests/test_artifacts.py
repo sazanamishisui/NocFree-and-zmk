@@ -185,6 +185,15 @@ class SourceConfigurationTest(unittest.TestCase):
 
         cmake = (ROOT / "CMakeLists.txt").read_text()
         self.assertIn("CONFIG_NOCFREE_LOW_BATTERY_LED_PROBE", cmake)
+        led_block = re.search(
+            r"if\(CONFIG_NOCFREE_LOW_BATTERY_LED_PROBE\)(.*?)endif\(\)",
+            cmake,
+            re.S,
+        )
+        self.assertIsNotNone(led_block)
+        self.assertIn(
+            "${APPLICATION_SOURCE_DIR}/include", led_block.group(1)
+        )
         self.assertIn("src/low_battery_led_probe.c", cmake)
 
     def test_xiao_rgb_layer_indicator_is_dongle_only(self):
