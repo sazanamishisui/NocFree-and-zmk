@@ -109,3 +109,16 @@ config NOCFREE_LOW_BATTERY_LED_PROBE
       electrically released while hardware VBUS is present. After VBUS is
       removed, alternate between open-drain low and electrical release every
       three seconds. This does not implement the final low-battery policy.
+
+config NOCFREE_LOW_BATTERY_INDICATOR
+    bool "NocFree local low-battery red LED warning"
+    default y
+    depends on GPIO
+    depends on SOC_NRF52833
+    depends on ZMK_BATTERY_REPORTING
+    depends on DT_HAS_NOCFREE_OPEN_DRAIN_INDICATOR_ENABLED
+    help
+      Monitor only this keyboard half's local ZMK battery state. At 15 percent
+      or below, pulse the shared red charge/low-battery indicator twice every
+      minute while VBUS is absent. The output is active-low open drain and is
+      always electrically released while USB power is present.

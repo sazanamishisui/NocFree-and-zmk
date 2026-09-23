@@ -168,6 +168,19 @@ This stage verifies pin, polarity, visible LED location, and the absence of
 charging-circuit contention before any permanent percentage threshold is
 enabled. See `LOW_BATTERY_LED_PROBE_NOTES.md` for the test sequence.
 
+### Local low-battery warning in v0.8.1
+
+Both hardware probes passed. The normal left and right images therefore monitor
+their own cached ZMK battery level. At 15% or below, the matching red indicator
+emits two short pulses once per minute while VBUS is absent. Every phase checks
+the nRF52833 hardware VBUS-detect bit; USB power immediately releases the
+open-drain line so the charging circuit retains control.
+
+Healthy battery state is event-driven and does not keep an indicator timer
+running. The warning does not depend on the XIAO: split-central battery fetching
+remains disabled. See `LOW_BATTERY_INDICATOR_NOTES.md` for the exact policy and
+first-flash checks.
+
 The upstream XIAO board devicetree already contains its own `vbatt` node. It
 therefore remains visible in compiled devicetree output, but this firmware keeps
 `CONFIG_ZMK_BATTERY_REPORTING=n` on the dongle, so the node is not sampled or

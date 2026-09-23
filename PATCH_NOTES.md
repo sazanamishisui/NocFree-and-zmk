@@ -1,3 +1,22 @@
+# v0.8.1 local low-battery indicator patch contents
+
+## Changes in v0.8.1
+
+- Added a normal-firmware low-battery indicator independently to the left and
+  right keyboard halves; each consumes only its own local ZMK battery state.
+- At 15% or below, the matching red LED emits two 180 ms pulses separated by
+  220 ms, repeating once per minute while running from battery.
+- Uses the verified active-low open-drain pins: P0.09 left and P0.17 right.
+- Reads the nRF52833 hardware VBUS-detect bit before every pulse phase. While
+  USB power is present, the pin is released and the charging circuit owns it.
+- Uses battery state events while healthy, so no periodic indicator timer runs
+  continuously at normal charge. A single five-second startup check covers an
+  unchanged cached battery value.
+- Kept XIAO split-central battery fetching disabled. The Pad remains excluded
+  because its battery measurement and indicator circuit are not verified.
+- Did not change scanners, split links, Studio, keymap, output switching,
+  pairing data, XIAO layer RGB, sleep policy, or charging control.
+
 # v0.8 low-battery LED probe patch contents
 
 ## Changes in v0.8 probe stage

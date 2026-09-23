@@ -13,7 +13,7 @@ deliberately absent.
 | Factory USB receiver, ESB / 2.4 GHz | Needs a proprietary protocol and pairing data ported. |
 | Pad battery reporting | Candidate firmware matches the right-half circuit, but the Pad's exact factory firmware/hardware revision is not confirmed. |
 | Backlight | Needs a verified PWM polarity. Driving it wrong is a hardware risk. |
-| Status LEDs, charge indicator | Same: unverified output pins and polarity. |
+| Red charge/low-battery indicator | Left P0.09 and right P0.17 verified with open-drain probes; normal firmware releases the line on VBUS. |
 | Mode switch | The left half's three-position switch has no verified electrical role. |
 | ZMK Studio | Requires per-key physical geometry, which this port has not measured. |
 | Deep sleep / soft off | Needs a wake source; the expander `INT` line is unused. |

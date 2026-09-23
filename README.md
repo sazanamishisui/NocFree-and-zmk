@@ -185,7 +185,7 @@ Contributors must submit only content they have the right to release under the M
 
 This repository also contains a community ZMK keyboard module, `zmk-keyboard-nocfree-and`, providing a minimum ANSI left/right port built on the interfaces documented above. The left half is the ZMK split central and presents Bluetooth or USB HID to the computer; the right half is a Bluetooth split peripheral. It is community work covered by section 8, not official NocFree firmware, and the disclaimer in section 1 applies in full.
 
-The Pad input device and left/right battery reporting are included. Factory USB receiver/2.4 GHz compatibility, Pad battery reporting, backlighting, charge-status control, and low-battery indication are deliberately not included yet.
+The Pad input device, left/right battery reporting, and local left/right low-battery warnings are included. Factory USB receiver/2.4 GHz compatibility, Pad battery reporting, backlighting, and charge-status control are deliberately not included yet.
 
 | Document | Contents |
 |---|---|

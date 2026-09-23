@@ -17,6 +17,12 @@ if(CONFIG_NOCFREE_LOW_BATTERY_LED_PROBE)
   zephyr_library_sources(src/low_battery_led_probe.c)
 endif()
 
+if(CONFIG_NOCFREE_LOW_BATTERY_INDICATOR)
+  # Battery state events and the cached level API are ZMK application headers.
+  zephyr_library_include_directories(${APPLICATION_SOURCE_DIR}/include)
+  zephyr_library_sources(src/low_battery_indicator.c)
+endif()
+
 # The output router is dongle-only. ZMK's event manager headers are internal
 # application headers, so expose that include directory to this module target.
 if(CONFIG_SHIELD_NOCFREE_AND_DONGLE)

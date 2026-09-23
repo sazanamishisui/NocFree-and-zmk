@@ -50,6 +50,7 @@ BATTERY_DIAG_OVERLAY = (
     ROOT / "boards" / "nocfree" / "nocfree_and" / "battery_diag.overlay"
 )
 LED_PROBE_SOURCE = ROOT / "src" / "low_battery_led_probe.c"
+LOW_BATTERY_INDICATOR_SOURCE = ROOT / "src" / "low_battery_indicator.c"
 LED_PROBE_OVERLAY = (
     ROOT
     / "boards"
@@ -189,6 +190,57 @@ class SourceConfigurationTest(unittest.TestCase):
         cmake = (ROOT / "CMakeLists.txt").read_text()
         self.assertIn("CONFIG_NOCFREE_LOW_BATTERY_LED_PROBE", cmake)
         self.assertIn("src/low_battery_led_probe.c", cmake)
+
+    def test_normal_halves_use_local_low_battery_events(self):
+        self.assertTrue(LOW_BATTERY_INDICATOR_SOURCE.is_file())
+        source = LOW_BATTERY_INDICATOR_SOURCE.read_text()
+
+        for required in (
+            "LOW_BATTERY_THRESHOLD 15",
+            "WARNING_REPEAT_DELAY K_MINUTES(1)",
+            "WARNING_ON_TIME K_MSEC(180)",
+            "WARNING_GAP_TIME K_MSEC(220)",
+            "NRF_POWER->USBREGSTATUS",
+            "POWER_USBREGSTATUS_VBUSDETECT_Msk",
+            "zmk_battery_state_of_charge()",
+            "as_zmk_battery_state_changed",
+            "ZMK_SUBSCRIPTION",
+            "GPIO_OUTPUT_INACTIVE",
+            "gpio_pin_set_dt(&indicator, 1)",
+            "gpio_pin_set_dt(&indicator, 0)",
+        ):
+            with self.subTest(required):
+                self.assertIn(required, source)
+
+        self.assertNotIn("GPIO_OUTPUT_ACTIVE", source)
+        self.assertNotIn("zmk_peripheral_battery_state_changed", source)
+
+        kconfig = (ROOT / "Kconfig").read_text()
+        block = re.search(
+            r"config NOCFREE_LOW_BATTERY_INDICATOR(.*?)(?=\nconfig |\Z)",
+            kconfig,
+            re.S,
+        )
+        self.assertIsNotNone(block)
+        self.assertIn("depends on ZMK_BATTERY_REPORTING", block.group(1))
+        self.assertIn(
+            "depends on DT_HAS_NOCFREE_OPEN_DRAIN_INDICATOR_ENABLED",
+            block.group(1),
+        )
+
+        cmake = (ROOT / "CMakeLists.txt").read_text()
+        indicator_block = re.search(
+            r"if\(CONFIG_NOCFREE_LOW_BATTERY_INDICATOR\)(.*?)endif\(\)",
+            cmake,
+            re.S,
+        )
+        self.assertIsNotNone(indicator_block)
+        self.assertIn(
+            "${APPLICATION_SOURCE_DIR}/include", indicator_block.group(1)
+        )
+        self.assertIn(
+            "src/low_battery_indicator.c", indicator_block.group(1)
+        )
 
     def test_xiao_rgb_layer_indicator_is_dongle_only(self):
         source = (ROOT / "src" / "layer_led_indicator.c").read_text()
@@ -519,6 +571,14 @@ class ArtifactTest(unittest.TestCase):
                 self.assertEqual(config.get("CONFIG_ZMK_BATTERY_VOLTAGE_DIVIDER"), "y")
                 self.assertEqual(config.get("CONFIG_ADC"), "y")
                 self.assertEqual(config.get("CONFIG_BT_BAS"), "y")
+                self.assertEqual(
+                    config.get("CONFIG_NOCFREE_LOW_BATTERY_INDICATOR"), "y"
+                )
+
+        for role in ("pad", "dongle"):
+            self.assertNotEqual(
+                kconfig(role).get("CONFIG_NOCFREE_LOW_BATTERY_INDICATOR"), "y"
+            )
 
         dongle_map = (role_dir("dongle") / "zmk.map").read_text(errors="replace")
         self.assertNotIn("peripheral_battery_event_compat.c.obj", dongle_map)
@@ -684,6 +744,17 @@ class ArtifactTest(unittest.TestCase):
             with self.subTest(role):
                 self.assertNotIn("layer_led_indicator.c.obj", half_map)
 
+    def test_low_battery_indicator_is_linked_only_into_keyboard_halves(self):
+        for role in ("left", "right"):
+            mapfile = (role_dir(role) / "zmk.map").read_text(errors="replace")
+            with self.subTest(role):
+                self.assertIn("low_battery_indicator.c.obj", mapfile)
+
+        for role in ("pad", "dongle"):
+            mapfile = (role_dir(role) / "zmk.map").read_text(errors="replace")
+            with self.subTest(role):
+                self.assertNotIn("low_battery_indicator.c.obj", mapfile)
+
     def test_half_uf2_targets_the_nrf52833_family(self):
         NRF52833_FAMILY = 0x621E937A
         for role in self.PERIPHERALS:
@@ -745,6 +816,7 @@ class BatteryAdcProbeArtifactTest(unittest.TestCase):
                 self.assertNotIn("local_battery_diagnostic.c.obj", mapfile)
                 self.assertNotIn("(battery_diagnostic.c.obj)", mapfile)
                 self.assertNotIn("peripheral_battery_event_compat.c.obj", mapfile)
+                self.assertNotIn("low_battery_indicator.c.obj", mapfile)
 
     def test_diagnostic_uf2s_stay_inside_application_partition(self):
         for role in self.ROLES:
@@ -791,6 +863,7 @@ class LowBatteryLedProbeArtifactTest(unittest.TestCase):
                 self.assertNotIn("battery_adc_probe.c.obj", mapfile)
                 self.assertNotIn("local_battery_diagnostic.c.obj", mapfile)
                 self.assertNotIn("peripheral_battery_event_compat.c.obj", mapfile)
+                self.assertNotIn("low_battery_indicator.c.obj", mapfile)
 
     def test_probe_uf2s_stay_inside_application_partition(self):
         for role in self.ROLES:
