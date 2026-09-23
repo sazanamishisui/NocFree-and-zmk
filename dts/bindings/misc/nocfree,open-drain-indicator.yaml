@@ -1,0 +1,15 @@
+# SPDX-License-Identifier: MIT
+
+description: |
+  NocFree indicator line shared with the charging circuit. Consumers must
+  configure the GPIO as open drain and must never actively drive it high.
+
+compatible: "nocfree,open-drain-indicator"
+
+include: base.yaml
+
+properties:
+  gpios:
+    type: phandle-array
+    required: true
+    description: Active-low, open-drain indicator GPIO.

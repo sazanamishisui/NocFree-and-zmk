@@ -1,3 +1,22 @@
+# v0.8 low-battery LED probe patch contents
+
+## Changes in v0.8 probe stage
+
+- Added standalone left/right probe images for the shared red
+  charge/low-battery indicator.
+- Declared the factory-derived pins as active-low open-drain only: P0.09 left
+  and P0.17 right. The normal firmware does not configure or drive them yet.
+- The probe starts with the line electrically released, continues releasing it
+  while USB is present, and double-blinks only after USB disconnects.
+- The probe never actively drives the shared line high, avoiding contention
+  with the keyboard charging circuit.
+- Disabled BLE, split operation, battery sampling, and settings changes in the
+  two diagnostic images.
+- Added source and built-artifact checks for GPIO mode, USB gating, link-map
+  isolation, flash bounds, and the two exact pins.
+- Did not enable the final percentage threshold or permanent warning policy;
+  those follow only after both physical LEDs are verified.
+
 # v0.7.4 battery calibration patch contents
 
 ## Changes in v0.7.4

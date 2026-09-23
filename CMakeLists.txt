@@ -12,6 +12,8 @@ zephyr_library_sources_ifdef(CONFIG_NOCFREE_LOCAL_BATTERY_DIAGNOSTIC
                              src/local_battery_diagnostic.c)
 zephyr_library_sources_ifdef(CONFIG_NOCFREE_BATTERY_ADC_PROBE
                              src/battery_adc_probe.c)
+zephyr_library_sources_ifdef(CONFIG_NOCFREE_LOW_BATTERY_LED_PROBE
+                             src/low_battery_led_probe.c)
 
 # The output router is dongle-only. ZMK's event manager headers are internal
 # application headers, so expose that include directory to this module target.

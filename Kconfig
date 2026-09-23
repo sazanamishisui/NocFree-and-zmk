@@ -95,4 +95,17 @@ config NOCFREE_BATTERY_ADC_PROBE
     help
       Read the verified AIN2 input with the verified divider-enable GPIO first
       inactive and then active. Print the raw ADC counts, pin millivolts, and
-      both the factory and current ZMK conversions over USB logging.
+      both the previous and hardware-calibrated ZMK conversions over USB
+      logging.
+
+config NOCFREE_LOW_BATTERY_LED_PROBE
+    bool "Safely pulse the NocFree shared red charge indicator"
+    default n
+    depends on GPIO
+    depends on ZMK_USB
+    depends on DT_HAS_NOCFREE_OPEN_DRAIN_INDICATOR_ENABLED
+    help
+      Temporary hardware-validation firmware. Keep the shared red indicator
+      electrically released while USB is present. After USB is disconnected,
+      pull it low briefly twice every five seconds using open-drain output
+      mode. This does not implement the final low-battery policy.

@@ -49,6 +49,14 @@ BATTERY_ADC_PROBE_SOURCE = ROOT / "src" / "battery_adc_probe.c"
 BATTERY_DIAG_OVERLAY = (
     ROOT / "boards" / "nocfree" / "nocfree_and" / "battery_diag.overlay"
 )
+LED_PROBE_SOURCE = ROOT / "src" / "low_battery_led_probe.c"
+LED_PROBE_OVERLAY = (
+    ROOT
+    / "boards"
+    / "nocfree"
+    / "nocfree_and"
+    / "led_probe.overlay"
+)
 
 
 class SourceConfigurationTest(unittest.TestCase):
@@ -68,6 +76,8 @@ class SourceConfigurationTest(unittest.TestCase):
             "nocfree_and_dongle",
             "nocfree_and_left_battery_adc_probe",
             "nocfree_and_right_battery_adc_probe",
+            "nocfree_and_left_low_battery_led_probe",
+            "nocfree_and_right_low_battery_led_probe",
             "nocfree_and_left_settings_reset",
             "nocfree_and_right_settings_reset",
             "nocfree_and_pad_settings_reset",
@@ -143,6 +153,40 @@ class SourceConfigurationTest(unittest.TestCase):
         self.assertIn("${APPLICATION_SOURCE_DIR}/include", cmake)
         self.assertIn("src/behavior_bt_output.c", cmake)
 
+    def test_low_battery_led_probes_are_open_drain_and_usb_gated(self):
+        self.assertTrue(LED_PROBE_SOURCE.is_file())
+        self.assertTrue(LED_PROBE_OVERLAY.is_file())
+
+        source = LED_PROBE_SOURCE.read_text()
+        self.assertIn("GPIO_OUTPUT_INACTIVE", source)
+        self.assertIn("USB_DC_DISCONNECTED", source)
+        self.assertIn("zmk_usb_get_conn_state()", source)
+        self.assertIn("gpio_pin_set_dt(&indicator, 1)", source)
+        self.assertIn("gpio_pin_set_dt(&indicator, 0)", source)
+        self.assertNotIn("GPIO_OUTPUT_ACTIVE", source)
+
+        overlay = LED_PROBE_OVERLAY.read_text()
+        self.assertIn("zephyr,console = &cdc_acm_uart0", overlay)
+        self.assertRegex(overlay, r"&vbatt\s*\{\s*status = \"disabled\";")
+
+        matrix = BUILD_MATRIX.read_text()
+        workflow = WORKFLOW.read_text()
+        for side in ("left", "right"):
+            artifact = f"nocfree_and_{side}_low_battery_led_probe"
+            build_dir = f"/tmp/ws/build/{side}_low_battery_led_probe"
+            self.assertIn(f"artifact-name: {artifact}", matrix)
+            self.assertIn(build_dir, workflow)
+        self.assertEqual(
+            matrix.count("CONFIG_NOCFREE_LOW_BATTERY_LED_PROBE=y"), 2
+        )
+        self.assertEqual(
+            workflow.count("CONFIG_NOCFREE_LOW_BATTERY_LED_PROBE=y"), 2
+        )
+
+        cmake = (ROOT / "CMakeLists.txt").read_text()
+        self.assertIn("CONFIG_NOCFREE_LOW_BATTERY_LED_PROBE", cmake)
+        self.assertIn("src/low_battery_led_probe.c", cmake)
+
     def test_xiao_rgb_layer_indicator_is_dongle_only(self):
         source = (ROOT / "src" / "layer_led_indicator.c").read_text()
         self.assertIn("GPIO_DT_SPEC_GET(DT_ALIAS(led0), gpios)", source)
@@ -215,7 +259,7 @@ class SourceConfigurationTest(unittest.TestCase):
         self.assertEqual(
             matrix.count("CONFIG_NOCFREE_BATTERY_ADC_PROBE=y"), 2
         )
-        self.assertEqual(matrix.count("CONFIG_ZMK_BATTERY_REPORTING=n"), 2)
+        self.assertEqual(matrix.count("CONFIG_ZMK_BATTERY_REPORTING=n"), 4)
         self.assertEqual(matrix.count("CONFIG_ADC=y"), 2)
         self.assertNotIn("artifact-name: nocfree_and_dongle_battery_diagnostic", matrix)
         self.assertTrue(BATTERY_DIAG_OVERLAY.is_file())
@@ -338,6 +382,13 @@ def diagnostic_available() -> bool:
 def battery_adc_probes_available() -> bool:
     return all(
         (role_dir(f"{side}_battery_adc_probe") / ".config").is_file()
+        for side in ("left", "right")
+    )
+
+
+def low_battery_led_probes_available() -> bool:
+    return all(
+        (role_dir(f"{side}_low_battery_led_probe") / ".config").is_file()
         for side in ("left", "right")
     )
 
@@ -693,6 +744,52 @@ class BatteryAdcProbeArtifactTest(unittest.TestCase):
                 self.assertNotIn("peripheral_battery_event_compat.c.obj", mapfile)
 
     def test_diagnostic_uf2s_stay_inside_application_partition(self):
+        for role in self.ROLES:
+            uf2 = role_dir(role) / "zmk.uf2"
+            with self.subTest(role):
+                self.assertTrue(uf2.is_file())
+                for block in uf2_blocks(uf2):
+                    self.assertGreaterEqual(block["address"], CODE_START)
+                    self.assertLessEqual(block["address"] + block["payload"], CODE_END)
+                    self.assertEqual(block["family"], 0x621E937A)
+
+
+@unittest.skipUnless(
+    low_battery_led_probes_available(),
+    f"no complete low-battery LED probe build output under {BUILD}",
+)
+class LowBatteryLedProbeArtifactTest(unittest.TestCase):
+    ROLES = (
+        "left_low_battery_led_probe",
+        "right_low_battery_led_probe",
+    )
+
+    def test_probes_are_local_usb_only_and_do_not_sample_battery(self):
+        for role in self.ROLES:
+            config = kconfig(role)
+            with self.subTest(role):
+                self.assertEqual(
+                    config.get("CONFIG_NOCFREE_LOW_BATTERY_LED_PROBE"), "y"
+                )
+                self.assertEqual(config.get("CONFIG_ZMK_USB_LOGGING"), "y")
+                self.assertEqual(config.get("CONFIG_ZMK_USB"), "y")
+                self.assertNotEqual(config.get("CONFIG_ZMK_BLE"), "y")
+                self.assertNotEqual(config.get("CONFIG_ZMK_SPLIT"), "y")
+                self.assertNotEqual(config.get("CONFIG_ZMK_BATTERY_REPORTING"), "y")
+                self.assertNotEqual(
+                    config.get("CONFIG_ZMK_BATTERY_VOLTAGE_DIVIDER"), "y"
+                )
+
+    def test_probes_link_only_the_led_reporter(self):
+        for role in self.ROLES:
+            mapfile = (role_dir(role) / "zmk.map").read_text(errors="replace")
+            with self.subTest(role):
+                self.assertIn("low_battery_led_probe.c.obj", mapfile)
+                self.assertNotIn("battery_adc_probe.c.obj", mapfile)
+                self.assertNotIn("local_battery_diagnostic.c.obj", mapfile)
+                self.assertNotIn("peripheral_battery_event_compat.c.obj", mapfile)
+
+    def test_probe_uf2s_stay_inside_application_partition(self):
         for role in self.ROLES:
             uf2 = role_dir(role) / "zmk.uf2"
             with self.subTest(role):

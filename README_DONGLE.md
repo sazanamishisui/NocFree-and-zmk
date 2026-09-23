@@ -151,6 +151,20 @@ not an electrical measurement issue. A safe low-battery consumer will be added
 separately; Pad battery reporting also remains disabled until its exact factory
 firmware/hardware revision is confirmed.
 
+### Shared red LED probe in the v0.8 development stage
+
+The factory-derived red charge/low-battery lines are P0.09 on the left and
+P0.17 on the right. Because each line is shared with the charging circuit, the
+normal firmware still leaves it untouched. The temporary
+`nocfree_and_left_low_battery_led_probe.uf2` and
+`nocfree_and_right_low_battery_led_probe.uf2` images configure only the
+matching line as active-low open drain. They release the line while USB is
+present and produce two short pulses every five seconds after USB disconnects.
+
+This stage verifies pin, polarity, visible LED location, and the absence of
+charging-circuit contention before any permanent percentage threshold is
+enabled. See `LOW_BATTERY_LED_PROBE_NOTES.md` for the test sequence.
+
 The upstream XIAO board devicetree already contains its own `vbatt` node. It
 therefore remains visible in compiled devicetree output, but this firmware keeps
 `CONFIG_ZMK_BATTERY_REPORTING=n` on the dongle, so the node is not sampled or

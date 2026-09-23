@@ -1,0 +1,14 @@
+/* SPDX-License-Identifier: MIT */
+
+/* Route diagnostic messages to the existing 1200-baud recovery CDC port. */
+/ {
+    chosen {
+        zephyr,console = &cdc_acm_uart0;
+        zephyr,shell-uart = &cdc_acm_uart0;
+    };
+};
+
+/* The LED probe does not sample the battery divider. */
+&vbatt {
+    status = "disabled";
+};

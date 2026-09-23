@@ -31,6 +31,18 @@
     };
 
     /*
+     * Factory firmware identifies P0.17 as the shared red charge/low-battery
+     * indicator. It must only ever be pulled low or electrically released.
+     * Merely declaring this node has no electrical effect; the temporary
+     * probe is the only v0.8 source that configures it.
+     */
+    red_charge_indicator: red-charge-indicator {
+        compatible = "nocfree,open-drain-indicator";
+        gpios = <&gpio0 17 (GPIO_ACTIVE_LOW | GPIO_OPEN_DRAIN)>;
+        status = "okay";
+    };
+
+    /*
      * Key positions, in KSCAN column order. The list index is the column, so
      * unpopulated expander bits are excluded simply by being absent -- there is
      * no separate "ignore" table to keep in sync.

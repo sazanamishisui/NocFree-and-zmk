@@ -451,6 +451,32 @@ class RoleTest(unittest.TestCase):
         self.assertIn("CONFIG_ZMK_BATTERY_REPORTING=y", configs["right"])
         self.assertIn("CONFIG_ZMK_BATTERY_REPORTING=n", configs["pad"])
 
+    def test_shared_red_indicators_are_open_drain_and_pin_exact(self):
+        expected = (
+            (LEFT_DTS, 9),
+            (RIGHT_DTS, 17),
+        )
+        for path, pin in expected:
+            text = read(path)
+            node = re.search(
+                r"red_charge_indicator: red-charge-indicator\s*\{(.*?)\n\s*\};",
+                text,
+                re.S,
+            )
+            with self.subTest(path.name):
+                self.assertIsNotNone(node)
+                self.assertIn(
+                    'compatible = "nocfree,open-drain-indicator"',
+                    node.group(1),
+                )
+                self.assertRegex(
+                    node.group(1),
+                    rf"gpios\s*=\s*<&gpio0\s+{pin}\s+"
+                    r"\(GPIO_ACTIVE_LOW \| GPIO_OPEN_DRAIN\)>",
+                )
+
+        self.assertNotIn("nocfree,open-drain-indicator", read(PAD_DTS))
+
 
 class MetadataTest(unittest.TestCase):
     def test_module_name_follows_the_zmk_convention(self):
