@@ -64,6 +64,8 @@ jobs:
           pad_diag_overlay="${pad_diag_overlay}pad_usb_diag.overlay"
           battery_diag_overlay="${GITHUB_WORKSPACE}/boards/nocfree/nocfree_and/"
           battery_diag_overlay="${battery_diag_overlay}battery_diag.overlay"
+          led_probe_overlay="${GITHUB_WORKSPACE}/boards/nocfree/nocfree_and/"
+          led_probe_overlay="${led_probe_overlay}led_probe.overlay"
 
           west build -s zmk/app -d /tmp/ws/build/left \
             -b nocfree_and_left/nrf52833/zmk -- \
@@ -146,6 +148,34 @@ jobs:
             -DCONFIG_ZMK_LOGGING_MINIMAL=y \
             -DCONFIG_NOCFREE_BATTERY_ADC_PROBE=y \
             -DEXTRA_DTC_OVERLAY_FILE="${battery_diag_overlay}"
+
+          west build -s zmk/app -d /tmp/ws/build/left_low_battery_led_probe \
+            -b nocfree_and_left/nrf52833/zmk -- \
+            -DZMK_CONFIG=/tmp/ws/config \
+            -DZMK_EXTRA_MODULES="${GITHUB_WORKSPACE}" \
+            -DCONFIG_ZMK_SPLIT=n \
+            -DCONFIG_ZMK_BLE=n \
+            -DCONFIG_ZMK_USB=y \
+            -DCONFIG_ZMK_BATTERY_REPORTING=n \
+            -DCONFIG_USB_DEVICE_INITIALIZE_AT_BOOT=n \
+            -DCONFIG_ZMK_USB_LOGGING=y \
+            -DCONFIG_ZMK_LOGGING_MINIMAL=y \
+            -DCONFIG_NOCFREE_LOW_BATTERY_LED_PROBE=y \
+            -DEXTRA_DTC_OVERLAY_FILE="${led_probe_overlay}"
+
+          west build -s zmk/app -d /tmp/ws/build/right_low_battery_led_probe \
+            -b nocfree_and_right/nrf52833/zmk -- \
+            -DZMK_CONFIG=/tmp/ws/config \
+            -DZMK_EXTRA_MODULES="${GITHUB_WORKSPACE}" \
+            -DCONFIG_ZMK_SPLIT=n \
+            -DCONFIG_ZMK_BLE=n \
+            -DCONFIG_ZMK_USB=y \
+            -DCONFIG_ZMK_BATTERY_REPORTING=n \
+            -DCONFIG_USB_DEVICE_INITIALIZE_AT_BOOT=n \
+            -DCONFIG_ZMK_USB_LOGGING=y \
+            -DCONFIG_ZMK_LOGGING_MINIMAL=y \
+            -DCONFIG_NOCFREE_LOW_BATTERY_LED_PROBE=y \
+            -DEXTRA_DTC_OVERLAY_FILE="${led_probe_overlay}"
 
       - name: Run the full suite against the build
         run: |
