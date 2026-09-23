@@ -12,6 +12,12 @@
 
 / {
     behaviors {
+        battery_status: battery_status {
+            compatible = "nocfree,behavior-battery-status";
+            #binding-cells = <0>;
+            display-name = "Battery Status";
+        };
+
         bootloader_hold: bootloader_hold {
             compatible = "zmk,behavior-hold-tap";
             label = "BOOTLOADER_HOLD";
@@ -71,7 +77,7 @@
                 &trans &out OUT_USB &trans &trans &trans &trans &trans &bootloader_hold 0 0
                 /* Home row */
                 &trans &trans &trans &trans &trans &trans
-                &trans &trans &trans &trans &trans &trans &trans &trans
+                &trans &trans &trans &trans &trans &trans &trans &battery_status
                 /* Shift row */
                 &trans &trans &trans &trans &trans &trans
                 &tog 2 &tog 3 &trans &trans &trans &trans &trans &trans

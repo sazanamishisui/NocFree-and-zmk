@@ -122,3 +122,15 @@ config NOCFREE_LOW_BATTERY_INDICATOR
       or below, pulse the shared red charge/low-battery indicator twice every
       minute while VBUS is absent. The output is active-low open drain and is
       always electrically released while USB power is present.
+
+config NOCFREE_BATTERY_STATUS
+    bool "NocFree on-demand battery status on the dongle RGB LED"
+    default y
+    depends on SHIELD_NOCFREE_AND_DONGLE
+    depends on ZMK_SPLIT_ROLE_CENTRAL
+    depends on BT_CENTRAL && BT_GATT_CLIENT
+    help
+      When the battery-status behavior is pressed, read the standard Battery
+      Service from only split slots 0 and 1, with explicit bounds checks, and
+      show left then right on the XIAO RGB LED. This deliberately leaves ZMK's
+      continuous split-central battery fetching disabled.

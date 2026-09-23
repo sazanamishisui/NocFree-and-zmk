@@ -1,3 +1,27 @@
+# v0.9.0 on-demand dongle battery display patch contents
+
+## Changes in v0.9.0
+
+- Added a dongle-local `Battery Status` behavior and assigned it to
+  `Fn+Enter` in the stock Fn layer.
+- The XIAO reads each keyboard half's standard BLE Battery Level
+  characteristic only after that chord is pressed. Continuous ZMK split
+  battery fetching stays disabled.
+- Restricts reads to the currently verified split slots: source 0 is right and
+  source 1 is left. All connection roles, slot indices, payload lengths, and
+  percentage values are checked before use; the Pad and host BLE links are
+  ignored.
+- Displays one white marker followed by the left level, then two white markers
+  followed by the right level. Green is 51--100%, yellow is 16--50%, red is
+  0--15%, and two purple flashes mean unavailable or invalid data.
+- Restores the current layer colour automatically after the sequence, even if
+  the active layer changed while battery status was displayed.
+- Adds a 2.5-second timeout. A silent or disconnected half becomes purple
+  rather than blocking keyboard input or displaying an old percentage.
+- Does not change either keyboard half, its ADC/divider control, local
+  low-battery warning, Pad firmware, scanner, debounce, pairing settings, or
+  USB/Bluetooth output routing.
+
 # v0.8.1 local low-battery indicator patch contents
 
 ## Changes in v0.8.1

@@ -51,6 +51,7 @@ BATTERY_DIAG_OVERLAY = (
 )
 LED_PROBE_SOURCE = ROOT / "src" / "low_battery_led_probe.c"
 LOW_BATTERY_INDICATOR_SOURCE = ROOT / "src" / "low_battery_indicator.c"
+BATTERY_STATUS_SOURCE = ROOT / "src" / "battery_status.c"
 LED_PROBE_OVERLAY = (
     ROOT
     / "boards"
@@ -264,6 +265,55 @@ class SourceConfigurationTest(unittest.TestCase):
         )
         self.assertIsNotNone(dongle_block)
         self.assertIn("src/layer_led_indicator.c", dongle_block.group(1))
+
+    def test_on_demand_battery_status_is_bounded_and_dongle_only(self):
+        self.assertTrue(BATTERY_STATUS_SOURCE.is_file())
+        source = BATTERY_STATUS_SOURCE.read_text()
+
+        for required in (
+            "RIGHT_SOURCE 0",
+            "LEFT_SOURCE 1",
+            "KEYBOARD_SOURCE_COUNT 2",
+            "source < 0 || source >= KEYBOARD_SOURCE_COUNT",
+            "info.role != BT_CONN_ROLE_CENTRAL",
+            "BT_UUID_BAS_BATTERY_LEVEL",
+            "slot->read.handle_count = 0",
+            "slot->read.by_uuid.start_handle = 0x0001",
+            "level <= 100U",
+            "BEHAVIOR_LOCALITY_CENTRAL",
+            "nocfree_layer_led_show_battery",
+        ):
+            with self.subTest(required):
+                self.assertIn(required, source)
+
+        self.assertNotIn("zmk_peripheral_battery_state_changed", source)
+        self.assertNotIn("CONFIG_ZMK_SPLIT_BLE_CENTRAL_BATTERY_LEVEL_FETCHING=y", source)
+
+        keymap = KEYMAP.read_text()
+        self.assertIn('compatible = "nocfree,behavior-battery-status";', keymap)
+        self.assertIn("&battery_status", keymap)
+
+        dongle_conf = (
+            ROOT
+            / "boards"
+            / "shields"
+            / "nocfree_and"
+            / "nocfree_and_dongle.conf"
+        ).read_text()
+        self.assertIn(
+            "CONFIG_ZMK_SPLIT_BLE_CENTRAL_BATTERY_LEVEL_FETCHING=n",
+            dongle_conf,
+        )
+
+        cmake = (ROOT / "CMakeLists.txt").read_text()
+        dongle_block = re.search(
+            r"if\(CONFIG_SHIELD_NOCFREE_AND_DONGLE\)(.*?)endif\(\)",
+            cmake,
+            re.S,
+        )
+        self.assertIsNotNone(dongle_block)
+        self.assertIn("CONFIG_NOCFREE_BATTERY_STATUS", dongle_block.group(1))
+        self.assertIn("src/battery_status.c", dongle_block.group(1))
 
     def test_dongle_defines_the_missing_peripheral_battery_event(self):
         source = (ROOT / "src" / "peripheral_battery_event_compat.c").read_text()
@@ -743,6 +793,21 @@ class ArtifactTest(unittest.TestCase):
             half_map = (role_dir(role) / "zmk.map").read_text(errors="replace")
             with self.subTest(role):
                 self.assertNotIn("layer_led_indicator.c.obj", half_map)
+
+    def test_battery_status_is_linked_only_into_dongle(self):
+        dongle = kconfig("dongle")
+        self.assertEqual(dongle.get("CONFIG_NOCFREE_BATTERY_STATUS"), "y")
+        self.assertNotEqual(
+            dongle.get("CONFIG_ZMK_SPLIT_BLE_CENTRAL_BATTERY_LEVEL_FETCHING"),
+            "y",
+        )
+
+        dongle_map = (role_dir("dongle") / "zmk.map").read_text(errors="replace")
+        self.assertIn("battery_status.c.obj", dongle_map)
+        for role in self.PERIPHERALS:
+            half_map = (role_dir(role) / "zmk.map").read_text(errors="replace")
+            with self.subTest(role):
+                self.assertNotIn("battery_status.c.obj", half_map)
 
     def test_low_battery_indicator_is_linked_only_into_keyboard_halves(self):
         for role in ("left", "right"):

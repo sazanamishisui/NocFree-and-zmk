@@ -20,6 +20,36 @@ NocFree Pad   nRF52833 -- BLE peripheral --/
 The NocFree halves continue to use their existing PCA9555 scanner and ZMK
 debounce settings. No ESB/nRF24L01 path is used.
 
+## On-demand battery display in v0.9.0
+
+Press `Fn+Enter` to make the XIAO read the two keyboard halves' standard BLE
+Battery Level characteristics. This is an on-demand GATT read: the unsafe
+continuous split-central battery-fetch option remains disabled. The halves
+continue their existing once-per-minute local measurements for their own
+low-battery warning, but do not continuously forward values to the dongle.
+
+The XIAO temporarily replaces its layer colour with this sequence:
+
+1. one white flash, then the left level;
+2. a short dark gap;
+3. two white flashes, then the right level;
+4. automatic return to the current layer colour.
+
+Green means 51--100%, yellow 16--50%, red 0--15%, and two purple flashes mean
+that the value was unavailable or invalid. A 2.5-second timeout prevents an
+unresponsive half from blocking the feature.
+
+The current pairing has been observed as split source 0 = right, source 1 =
+left, and source 2 = Pad. v0.9.0 checks every source index before access and
+ignores source 2. If the XIAO settings are erased and all peripherals are
+paired again in a different order, verify the mapping by powering one half off
+at a time before trusting the left/right labels.
+
+Only `nocfree_and_dongle.uf2` needs to be flashed for the first v0.9.0 test.
+Keep both halves on their already-tested v0.8.1 normal images. Because Studio
+stores keymap overrides in XIAO settings, run **Restore Stock Settings** once
+after flashing so `Fn+Enter` receives the new `Battery Status` binding.
+
 ## Dongle hardware assumed by v0.1
 
 Seeed Studio XIAO nRF52840 / XIAO BLE, built as `xiao_ble//zmk`.
