@@ -159,7 +159,10 @@ normal firmware still leaves it untouched. The temporary
 `nocfree_and_left_low_battery_led_probe.uf2` and
 `nocfree_and_right_low_battery_led_probe.uf2` images configure only the
 matching line as active-low open drain. They release the line while USB is
-present and produce two short pulses every five seconds after USB disconnects.
+present. Probe hotfix 02 uses the nRF52833 hardware VBUS-detect bit and, after
+USB removal, alternates three seconds pulled low with three seconds electrically
+released. This deliberately slow cycle reveals whether the physical LED is on
+in the low or released state.
 
 This stage verifies pin, polarity, visible LED location, and the absence of
 charging-circuit contention before any permanent percentage threshold is

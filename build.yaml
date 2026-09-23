@@ -86,7 +86,7 @@ include:
       -DEXTRA_DTC_OVERLAY_FILE=${GITHUB_WORKSPACE}/boards/nocfree/nocfree_and/battery_diag.overlay
 
   # Temporary LED-pin validation images. The shared charge/low-battery line is
-  # released while USB is attached and double-blinks only after USB removal.
+  # released while VBUS exists and alternates low/released after USB removal.
   - board: nocfree_and_left/nrf52833/zmk
     artifact-name: nocfree_and_left_low_battery_led_probe
     cmake-args: >-

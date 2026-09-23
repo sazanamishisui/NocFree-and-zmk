@@ -106,6 +106,6 @@ config NOCFREE_LOW_BATTERY_LED_PROBE
     depends on DT_HAS_NOCFREE_OPEN_DRAIN_INDICATOR_ENABLED
     help
       Temporary hardware-validation firmware. Keep the shared red indicator
-      electrically released while USB is present. After USB is disconnected,
-      pull it low briefly twice every five seconds using open-drain output
-      mode. This does not implement the final low-battery policy.
+      electrically released while hardware VBUS is present. After VBUS is
+      removed, alternate between open-drain low and electrical release every
+      three seconds. This does not implement the final low-battery policy.

@@ -14,9 +14,6 @@ zephyr_library_sources_ifdef(CONFIG_NOCFREE_BATTERY_ADC_PROBE
                              src/battery_adc_probe.c)
 
 if(CONFIG_NOCFREE_LOW_BATTERY_LED_PROBE)
-  # zmk_usb_get_conn_state() is an application-internal API. Module libraries
-  # do not receive the ZMK application include directory automatically.
-  zephyr_library_include_directories(${APPLICATION_SOURCE_DIR}/include)
   zephyr_library_sources(src/low_battery_led_probe.c)
 endif()
 

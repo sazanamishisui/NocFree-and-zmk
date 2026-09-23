@@ -15,10 +15,10 @@ actively drive it high.
 ## Safety behavior
 
 - Initial state is electrically released.
-- While USB is present, the line remains released so the charging circuit owns
-  the indication.
-- After USB disconnects, the probe produces two 180 ms pulses separated by
-  220 ms, then waits five seconds.
+- While hardware VBUS is present, the line remains released so the charging
+  circuit owns the indication.
+- After VBUS disappears, the probe pulls the line low for three seconds, then
+  releases it for three seconds, repeating until USB is reconnected.
 - Battery measurement, BLE, split communication, and settings changes are
   disabled in the diagnostic image.
 - The normal left/right images declare the pin metadata but do not configure
@@ -40,8 +40,9 @@ all green.
    not be commanded by the probe during this interval; ordinary charge-state
    behavior may remain visible.
 4. Unplug USB without switching the half off.
-5. Look for two short red pulses every five seconds. Record which physical LED
-   lights and whether the cadence is clearly visible.
+5. Look for a clear three-seconds/three-seconds alternation. Record which
+   physical LED lights and whether it lights during the pull-low phase or the
+   released phase.
 6. Reconnect USB. Probe-generated double pulses must stop within one second.
 7. Use the CDC port at 1200 baud and restore the matching normal peripheral
    image. A settings reset is not needed.
@@ -63,3 +64,16 @@ The first v0.8 upload did not expose ZMK's application include directory to
 the module library, so `zmk/usb.h` was not found while compiling the LED probe.
 Hotfix 01 adds that include directory only when
 `CONFIG_NOCFREE_LOW_BATTERY_LED_PROBE=y`; runtime behavior is unchanged.
+
+## Probe hotfix 02
+
+The first hardware test showed no pulses: the LED extinguished normally after
+about ten seconds on USB, then remained continuously lit after USB removal.
+The ZMK USB connection state therefore did not provide a reliable physical
+VBUS gate for this diagnostic, and the released state itself may correspond to
+LED-on on this shared circuit.
+
+Hotfix 02 reads the nRF52833 hardware VBUS-detect bit directly. With VBUS
+absent it alternates three seconds of open-drain low and three seconds of
+electrical release. This makes both the pin effect and the physical polarity
+unambiguous while still never driving the shared line high.

@@ -159,11 +159,14 @@ class SourceConfigurationTest(unittest.TestCase):
 
         source = LED_PROBE_SOURCE.read_text()
         self.assertIn("GPIO_OUTPUT_INACTIVE", source)
-        self.assertIn("USB_DC_DISCONNECTED", source)
-        self.assertIn("zmk_usb_get_conn_state()", source)
+        self.assertIn("NRF_POWER->USBREGSTATUS", source)
+        self.assertIn("POWER_USBREGSTATUS_VBUSDETECT_Msk", source)
+        self.assertNotIn("zmk_usb_get_conn_state()", source)
         self.assertIn("gpio_pin_set_dt(&indicator, 1)", source)
         self.assertIn("gpio_pin_set_dt(&indicator, 0)", source)
         self.assertNotIn("GPIO_OUTPUT_ACTIVE", source)
+        self.assertIn("PHASE_TICKS 12", source)
+        self.assertIn("PROBE_TICK_MS 250", source)
 
         overlay = LED_PROBE_OVERLAY.read_text()
         self.assertIn("zephyr,console = &cdc_acm_uart0", overlay)
@@ -185,15 +188,6 @@ class SourceConfigurationTest(unittest.TestCase):
 
         cmake = (ROOT / "CMakeLists.txt").read_text()
         self.assertIn("CONFIG_NOCFREE_LOW_BATTERY_LED_PROBE", cmake)
-        led_block = re.search(
-            r"if\(CONFIG_NOCFREE_LOW_BATTERY_LED_PROBE\)(.*?)endif\(\)",
-            cmake,
-            re.S,
-        )
-        self.assertIsNotNone(led_block)
-        self.assertIn(
-            "${APPLICATION_SOURCE_DIR}/include", led_block.group(1)
-        )
         self.assertIn("src/low_battery_led_probe.c", cmake)
 
     def test_xiao_rgb_layer_indicator_is_dongle_only(self):

@@ -11,9 +11,8 @@
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
-#include <zephyr/usb/usb_device.h>
 
-#include <zmk/usb.h>
+#include <nrf.h>
 
 LOG_MODULE_REGISTER(nocfree_low_battery_led_probe, LOG_LEVEL_INF);
 
@@ -23,46 +22,46 @@ LOG_MODULE_REGISTER(nocfree_low_battery_led_probe, LOG_LEVEL_INF);
 static const struct gpio_dt_spec indicator =
     GPIO_DT_SPEC_GET(INDICATOR_NODE, gpios);
 
-static uint8_t blink_phase;
+#define PHASE_TICKS 12
+#define PROBE_TICK_MS 250
+
+static bool pulling_low;
+static uint8_t phase_ticks;
 
 static void release_indicator(void) {
     /* With GPIO_ACTIVE_LOW | GPIO_OPEN_DRAIN, inactive means high impedance. */
     (void)gpio_pin_set_dt(&indicator, 0);
 }
 
-static bool usb_is_disconnected(void) {
-    return zmk_usb_get_conn_state() == USB_DC_DISCONNECTED;
+static bool usb_vbus_present(void) {
+    return (NRF_POWER->USBREGSTATUS & POWER_USBREGSTATUS_VBUSDETECT_Msk) != 0;
 }
 
 static void indicator_probe_work(struct k_work *work) {
     struct k_work_delayable *delayable = k_work_delayable_from_work(work);
 
-    if (!usb_is_disconnected()) {
-        blink_phase = 0;
+    if (usb_vbus_present()) {
+        pulling_low = false;
+        phase_ticks = 0;
         release_indicator();
-        k_work_reschedule(delayable, K_MSEC(500));
+        k_work_reschedule(delayable, K_MSEC(PROBE_TICK_MS));
         return;
     }
 
-    switch (blink_phase) {
-    case 0:
-    case 2:
-        /* Active-low open drain: active pulls low and can never drive high. */
-        (void)gpio_pin_set_dt(&indicator, 1);
-        blink_phase++;
-        k_work_reschedule(delayable, K_MSEC(180));
-        break;
-    case 1:
-        release_indicator();
-        blink_phase++;
-        k_work_reschedule(delayable, K_MSEC(220));
-        break;
-    default:
-        release_indicator();
-        blink_phase = 0;
-        k_work_reschedule(delayable, K_SECONDS(5));
-        break;
+    if (phase_ticks == 0) {
+        pulling_low = !pulling_low;
+        if (pulling_low) {
+            /* Active-low open drain can pull low but can never drive high. */
+            (void)gpio_pin_set_dt(&indicator, 1);
+            LOG_INF("NOCFREE_LED_PROBE phase=pull_low");
+        } else {
+            release_indicator();
+            LOG_INF("NOCFREE_LED_PROBE phase=release");
+        }
     }
+
+    phase_ticks = (phase_ticks + 1) % PHASE_TICKS;
+    k_work_reschedule(delayable, K_MSEC(PROBE_TICK_MS));
 }
 
 K_WORK_DELAYABLE_DEFINE(indicator_probe, indicator_probe_work);
@@ -82,8 +81,8 @@ static int indicator_probe_init(void) {
     }
 
     release_indicator();
-    LOG_INF("NOCFREE_LED_PROBE ready; disconnect USB to start double blink");
-    k_work_schedule(&indicator_probe, K_MSEC(500));
+    LOG_INF("NOCFREE_LED_PROBE ready; disconnect USB to alternate low/release");
+    k_work_schedule(&indicator_probe, K_MSEC(PROBE_TICK_MS));
     return 0;
 }
 

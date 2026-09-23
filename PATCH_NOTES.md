@@ -16,6 +16,8 @@
   isolation, flash bounds, and the two exact pins.
 - Did not enable the final percentage threshold or permanent warning policy;
   those follow only after both physical LEDs are verified.
+- Probe hotfix 02 replaces ZMK logical USB-state gating with the nRF52833
+  hardware VBUS-detect bit and uses a clear three-second low/release cycle.
 
 # v0.7.4 battery calibration patch contents
 
