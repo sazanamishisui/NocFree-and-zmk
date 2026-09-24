@@ -64,6 +64,8 @@ jobs:
           pad_diag_overlay="${pad_diag_overlay}pad_usb_diag.overlay"
           battery_diag_overlay="${GITHUB_WORKSPACE}/boards/nocfree/nocfree_and/"
           battery_diag_overlay="${battery_diag_overlay}battery_diag.overlay"
+          pad_battery_diag_overlay="${GITHUB_WORKSPACE}/boards/nocfree/nocfree_and/"
+          pad_battery_diag_overlay="${pad_battery_diag_overlay}pad_batt.overlay"
           led_probe_overlay="${GITHUB_WORKSPACE}/boards/nocfree/nocfree_and/"
           led_probe_overlay="${led_probe_overlay}led_probe.overlay"
 
@@ -148,6 +150,22 @@ jobs:
             -DCONFIG_ZMK_LOGGING_MINIMAL=y \
             -DCONFIG_NOCFREE_BATTERY_ADC_PROBE=y \
             -DEXTRA_DTC_OVERLAY_FILE="${battery_diag_overlay}"
+
+          west build -s zmk/app -d /tmp/ws/build/pad_battery_adc_probe \
+            -b nocfree_and_pad/nrf52833/zmk -- \
+            -DZMK_CONFIG=/tmp/ws/config \
+            -DZMK_EXTRA_MODULES="${GITHUB_WORKSPACE}" \
+            -DCONFIG_ZMK_SPLIT=n \
+            -DCONFIG_ZMK_BLE=n \
+            -DCONFIG_ZMK_USB=y \
+            -DCONFIG_ZMK_BATTERY_REPORTING=n \
+            -DCONFIG_ADC=y \
+            -DCONFIG_USB_DEVICE_INITIALIZE_AT_BOOT=n \
+            -DCONFIG_ZMK_USB_LOGGING=y \
+            -DCONFIG_ZMK_LOGGING_MINIMAL=y \
+            -DCONFIG_NOCFREE_BATTERY_ADC_PROBE=y \
+            -DEXTRA_DTC_OVERLAY_FILE="${pad_battery_diag_overlay}" \
+            -DKEYMAP_FILE="${pad_diag_keymap}"
 
           west build -s zmk/app -d /tmp/ws/build/left_low_battery_led_probe \
             -b nocfree_and_left/nrf52833/zmk -- \
