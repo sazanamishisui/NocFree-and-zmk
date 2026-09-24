@@ -131,6 +131,6 @@ config NOCFREE_BATTERY_STATUS
     depends on BT_CENTRAL && BT_GATT_CLIENT
     help
       When the battery-status behavior is pressed, read the standard Battery
-      Service from only split slots 0 and 1, with explicit bounds checks, and
-      show left then right on the XIAO RGB LED. This deliberately leaves ZMK's
-      continuous split-central battery fetching disabled.
+      Service from split slots 0, 1, and 2, with explicit bounds checks, and
+      show left, right, then Pad on the XIAO RGB LED. This deliberately leaves
+      ZMK's continuous split-central battery fetching disabled.

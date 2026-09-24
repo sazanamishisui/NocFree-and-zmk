@@ -38,7 +38,7 @@ struct led_step {
     k_timeout_t duration;
 };
 
-#define MAX_BATTERY_LED_STEPS 18
+#define MAX_BATTERY_LED_STEPS 24
 #define MARKER_ON_TIME K_MSEC(160)
 #define MARKER_OFF_TIME K_MSEC(140)
 #define LEVEL_ON_TIME K_MSEC(1200)
@@ -137,7 +137,8 @@ static void battery_led_work_handler(struct k_work *work) {
 K_WORK_DELAYABLE_DEFINE(battery_led_work, battery_led_work_handler);
 
 void nocfree_layer_led_show_battery(uint8_t left_level, bool left_valid,
-                                    uint8_t right_level, bool right_valid) {
+                                    uint8_t right_level, bool right_valid,
+                                    uint8_t pad_level, bool pad_valid) {
     if (!indicator_ready) {
         return;
     }
@@ -146,12 +147,15 @@ void nocfree_layer_led_show_battery(uint8_t left_level, bool left_valid,
     battery_step_count = 0;
     battery_step_index = 0;
 
-    /* One white marker = left, two white markers = right. */
+    /* One white marker = left, two = right, three = Pad. */
     append_marker(1);
     append_level(left_level, left_valid);
     append_step(false, false, false, SIDE_GAP_TIME);
     append_marker(2);
     append_level(right_level, right_valid);
+    append_step(false, false, false, SIDE_GAP_TIME);
+    append_marker(3);
+    append_level(pad_level, pad_valid);
 
     battery_display_active = true;
     k_work_reschedule(&battery_led_work, K_NO_WAIT);

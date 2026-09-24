@@ -260,6 +260,9 @@ class SourceConfigurationTest(unittest.TestCase):
         self.assertIn("case NAV_LAYER", source)
         self.assertIn("case NUMPAD_LAYER", source)
         self.assertIn("case WORK_LAYER", source)
+        self.assertIn("MAX_BATTERY_LED_STEPS 24", source)
+        self.assertIn("append_marker(3)", source)
+        self.assertIn("append_level(pad_level, pad_valid)", source)
 
         cmake = (ROOT / "CMakeLists.txt").read_text()
         dongle_block = re.search(
@@ -277,8 +280,9 @@ class SourceConfigurationTest(unittest.TestCase):
         for required in (
             "RIGHT_SOURCE 0",
             "LEFT_SOURCE 1",
-            "KEYBOARD_SOURCE_COUNT 2",
-            "source < 0 || source >= KEYBOARD_SOURCE_COUNT",
+            "PAD_SOURCE 2",
+            "PERIPHERAL_SOURCE_COUNT 3",
+            "source < 0 || source >= PERIPHERAL_SOURCE_COUNT",
             "info.role != BT_CONN_ROLE_CENTRAL",
             "BT_UUID_BAS_BATTERY_LEVEL",
             "slot->read.handle_count = 0",
@@ -286,6 +290,7 @@ class SourceConfigurationTest(unittest.TestCase):
             "level <= 100U",
             "BEHAVIOR_LOCALITY_CENTRAL",
             "nocfree_layer_led_show_battery",
+            "slots[PAD_SOURCE].level",
         ):
             with self.subTest(required):
                 self.assertIn(required, source)
@@ -638,22 +643,28 @@ class ArtifactTest(unittest.TestCase):
         self.assertNotEqual(kconfig("pad").get("CONFIG_ZMK_STUDIO"), "y")
         self.assertEqual(kconfig("dongle").get("CONFIG_ZMK_STUDIO"), "y")
 
-    def test_battery_monitoring_is_enabled_only_for_verified_halves(self):
-        self.assertEqual(kconfig("left").get("CONFIG_ZMK_BATTERY_REPORTING"), "y")
-        self.assertEqual(kconfig("right").get("CONFIG_ZMK_BATTERY_REPORTING"), "y")
-        self.assertNotEqual(kconfig("pad").get("CONFIG_ZMK_BATTERY_REPORTING"), "y")
+    def test_battery_monitoring_is_enabled_only_for_verified_peripherals(self):
+        for role in self.PERIPHERALS:
+            with self.subTest(role):
+                self.assertEqual(
+                    kconfig(role).get("CONFIG_ZMK_BATTERY_REPORTING"), "y"
+                )
         self.assertNotEqual(kconfig("dongle").get("CONFIG_ZMK_BATTERY_REPORTING"), "y")
         self.assertNotEqual(
             kconfig("dongle").get("CONFIG_ZMK_SPLIT_BLE_CENTRAL_BATTERY_LEVEL_FETCHING"),
             "y",
         )
 
-        for role in ("left", "right"):
+        for role in self.PERIPHERALS:
             config = kconfig(role)
             with self.subTest(role):
                 self.assertEqual(config.get("CONFIG_ZMK_BATTERY_VOLTAGE_DIVIDER"), "y")
                 self.assertEqual(config.get("CONFIG_ADC"), "y")
                 self.assertEqual(config.get("CONFIG_BT_BAS"), "y")
+
+        for role in ("left", "right"):
+            config = kconfig(role)
+            with self.subTest(role):
                 self.assertEqual(
                     config.get("CONFIG_NOCFREE_LOW_BATTERY_INDICATOR"), "y"
                 )
@@ -668,7 +679,7 @@ class ArtifactTest(unittest.TestCase):
         self.assertNotIn("(battery_diagnostic.c.obj)", dongle_map)
 
     def test_compiled_battery_nodes_keep_verified_pinout_and_calibration(self):
-        for role, enable_pin in (("left", 5), ("right", 31)):
+        for role, enable_pin in (("left", 5), ("right", 31), ("pad", 31)):
             text = (role_dir(role) / "zephyr.dts").read_text()
             node = re.search(r"vbatt: vbatt \{(.*?)\n\s*\};", text, re.S)
             with self.subTest(role):
@@ -682,9 +693,6 @@ class ArtifactTest(unittest.TestCase):
                     values,
                     rf"power-gpios = < &gpio0 0x{enable_pin:x} 0x0 >",
                 )
-
-        pad_text = (role_dir("pad") / "zephyr.dts").read_text()
-        self.assertNotIn('compatible = "zmk,battery-voltage-divider"', pad_text)
 
         # XIAO's upstream board DTS always contains its own VBAT divider even
         # when CONFIG_ZMK_BATTERY_REPORTING=n. Keep that known node exact so it

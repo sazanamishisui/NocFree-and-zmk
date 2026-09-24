@@ -32,10 +32,10 @@ CONFIG_CLOCK_CONTROL_NRF_K32SRC_RC_CALIBRATION=y
 # The Pad is a split peripheral: it has no host-facing HID output.
 CONFIG_ZMK_BLE=y
 
-# No battery source is declared: the ADC and divider-enable pins are not
-# verified by this port. Reporting would otherwise default on and advertise a
-# Battery Service with nothing behind it.
-CONFIG_ZMK_BATTERY_REPORTING=n
+# Factory firmware analysis and the USB-only v0.10 hardware probe verify
+# P0.04/AIN2, active-high P0.31, and the effective 3:2 conversion. Sample at
+# ZMK's normal low frequency and expose the standard BLE Battery Service.
+CONFIG_ZMK_BATTERY_REPORTING=y
 
 # USB is brought up only for the CDC recovery interface, so the Pad keeps a
 # host-driven bootloader path that does not depend on the split link. (Fn+Del

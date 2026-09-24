@@ -153,7 +153,7 @@ In the current code, these SPI signals are used only by the left external nRF24L
 
 ## 5. Battery Measurement Parameters
 
-Factory firmware v2.4.5 established the ADC and divider-enable pinout, but its ADC scaling cannot be transferred directly to ZMK's differently configured nRF SAADC. v0.7.3 measurements found about 2.80 V at AIN2 on both freshly charged halves. v0.7.4 therefore uses an effective `3/2` full/output ratio, producing approximately 4.18–4.23 V. These are calibration values rather than measured resistor values. The Pad remains disabled pending exact revision confirmation.
+Factory firmware established the ADC and divider-enable pinout, but its ADC scaling cannot be transferred directly to ZMK's differently configured nRF SAADC. Hardware probes found about 2.80 V at AIN2 on both freshly charged halves and the Pad. The port therefore uses an effective `3/2` full/output ratio, producing approximately 4.18–4.23 V. These are calibration values rather than measured resistor values.
 
 These values come from the current firmware and do not replace a complete schematic. Calibrate the ADC reference voltage, divider ratio, battery curve, charge-state detection, and low-voltage threshold against the target hardware revision.
 
@@ -185,7 +185,7 @@ Contributors must submit only content they have the right to release under the M
 
 This repository also contains a community ZMK keyboard module, `zmk-keyboard-nocfree-and`, providing a minimum ANSI left/right port built on the interfaces documented above. The left half is the ZMK split central and presents Bluetooth or USB HID to the computer; the right half is a Bluetooth split peripheral. It is community work covered by section 8, not official NocFree firmware, and the disclaimer in section 1 applies in full.
 
-The Pad input device, left/right battery reporting, and local left/right low-battery warnings are included. Factory USB receiver/2.4 GHz compatibility, Pad battery reporting, backlighting, and charge-status control are deliberately not included yet.
+The Pad input device, left/right/Pad battery reporting, and local left/right low-battery warnings are included. Factory USB receiver/2.4 GHz compatibility, Pad-local warning LED, backlighting, and charge-status control are deliberately not included yet.
 
 | Document | Contents |
 |---|---|

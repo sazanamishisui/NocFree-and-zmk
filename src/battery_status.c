@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: MIT
  *
  * On-demand, bounds-checked reads of the standard Battery Service exposed by
- * the two NocFree keyboard halves. This intentionally does not enable ZMK's
+ * the two NocFree keyboard halves and Pad. This intentionally does not enable ZMK's
  * continuous split-central battery fetching path.
  */
 
@@ -29,10 +29,11 @@
 
 LOG_MODULE_REGISTER(nocfree_battery_status, CONFIG_ZMK_LOG_LEVEL);
 
-/* Observed and preserved pairing order: source 0 = right, source 1 = left. */
+/* Observed and preserved pairing order: source 0 = right, 1 = left, 2 = Pad. */
 #define RIGHT_SOURCE 0
 #define LEFT_SOURCE 1
-#define KEYBOARD_SOURCE_COUNT 2
+#define PAD_SOURCE 2
+#define PERIPHERAL_SOURCE_COUNT 3
 #define QUERY_TIMEOUT K_MSEC(2500)
 
 /*
@@ -50,7 +51,7 @@ struct battery_query_slot {
     bool done;
 };
 
-static struct battery_query_slot slots[KEYBOARD_SOURCE_COUNT];
+static struct battery_query_slot slots[PERIPHERAL_SOURCE_COUNT];
 static atomic_t query_active;
 static atomic_t enumeration_complete;
 static atomic_t pending_mask;
@@ -111,8 +112,8 @@ static void start_query_for_conn(struct bt_conn *conn, void *user_data) {
     }
 
     int source = peripheral_slot_index_for_conn(conn);
-    if (source < 0 || source >= KEYBOARD_SOURCE_COUNT) {
-        /* Ignore the Pad, host-facing BLE links, and all invalid indices. */
+    if (source < 0 || source >= PERIPHERAL_SOURCE_COUNT) {
+        /* Ignore host-facing BLE links and every invalid split-slot index. */
         return;
     }
 
@@ -144,7 +145,8 @@ static void show_results(void) {
 
     nocfree_layer_led_show_battery(
         slots[LEFT_SOURCE].level, (valid & BIT(LEFT_SOURCE)) != 0,
-        slots[RIGHT_SOURCE].level, (valid & BIT(RIGHT_SOURCE)) != 0);
+        slots[RIGHT_SOURCE].level, (valid & BIT(RIGHT_SOURCE)) != 0,
+        slots[PAD_SOURCE].level, (valid & BIT(PAD_SOURCE)) != 0);
 }
 
 static void timeout_work_handler(struct k_work *work) {

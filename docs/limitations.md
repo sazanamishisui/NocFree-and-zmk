@@ -2,7 +2,7 @@
 
 # Limitations
 
-This remains a conservative community port. The verified left/right battery
+This remains a conservative community port. The verified left/right/Pad battery
 divider is now supported, while unrelated power and lighting controls remain
 deliberately absent.
 
@@ -11,7 +11,6 @@ deliberately absent.
 | | Why |
 |---|---|
 | Factory USB receiver, ESB / 2.4 GHz | Needs a proprietary protocol and pairing data ported. |
-| Pad battery reporting | Candidate firmware matches the right-half circuit, but the Pad's exact factory firmware/hardware revision is not confirmed. |
 | Backlight | Needs a verified PWM polarity. Driving it wrong is a hardware risk. |
 | Red charge/low-battery indicator | Left P0.09 and right P0.17 verified with open-drain probes; normal firmware releases the line on VBUS. |
 | Mode switch | The left half's three-position switch has no verified electrical role. |
@@ -19,9 +18,10 @@ deliberately absent.
 | Deep sleep / soft off | Needs a wake source; the expander `INT` line is unused. |
 | Gaming / low-latency modes | Out of scope for a baseline. |
 
-The only newly driven outputs are the factory-verified battery-divider enables:
-left `P0.05` and right `P0.31`. They initialize inactive and are asserted only
-during a measurement. Optional and unverified hardware remains untouched.
+The only newly driven outputs are the verified battery-divider enables: left
+`P0.05`, right `P0.31`, and Pad `P0.31`. They initialize inactive and are
+asserted only during a measurement. Optional and unverified hardware remains
+untouched.
 
 ## Known rough edges
 

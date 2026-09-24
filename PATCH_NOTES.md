@@ -1,3 +1,22 @@
+# v0.11.0 Pad battery reporting and three-device display
+
+## Changes in v0.11.0
+
+- Added the verified Pad battery divider to its normal peripheral image:
+  P0.04/AIN2, active-high P0.31, and the hardware-confirmed 3:2 conversion.
+- Enabled the Pad's standard BLE Battery Service with ZMK's low-frequency local
+  measurement. The divider remains inactive between samples.
+- Extended the bounded, on-demand XIAO GATT reader from two split slots to the
+  three observed slots: source 0 right, source 1 left, and source 2 Pad.
+- Extended the RGB sequence to one white marker for left, two for right, and
+  three for Pad. A disconnected, timed-out, or invalid Pad is purple without
+  hiding valid values from the two keyboard halves.
+- Kept continuous split-central battery fetching disabled and retained all
+  source-index, connection-role, payload-length, and percentage bounds checks.
+- Did not add a Pad-local low-battery LED because its indicator circuit is not
+  verified. No scanner, debounce, keymap, output, sleep, or pairing behavior
+  changed.
+
 # Pad battery ADC verification after v0.9.1
 
 ## Hotfix 01

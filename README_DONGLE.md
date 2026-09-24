@@ -20,38 +20,39 @@ NocFree Pad   nRF52833 -- BLE peripheral --/
 The NocFree halves continue to use their existing PCA9555 scanner and ZMK
 debounce settings. No ESB/nRF24L01 path is used.
 
-## On-demand battery display in v0.9.1
+## On-demand battery display with Pad in v0.11.0
 
-Press `Fn+Enter` or `Fn+V` to make the XIAO read the two keyboard halves'
+Press `Fn+Enter` or `Fn+V` to make the XIAO read the left, right, and Pad
 standard BLE Battery Level characteristics. `Fn+Enter` is convenient in normal
 use; `Fn+V` is entirely on the left half and remains available while the right
-half is off. This is an on-demand GATT read: the unsafe
-continuous split-central battery-fetch option remains disabled. The halves
-continue their existing once-per-minute local measurements for their own
-low-battery warning, but do not continuously forward values to the dongle.
+half is off. This remains an on-demand GATT read: the unsafe continuous
+split-central battery-fetch option remains disabled. The halves and Pad use
+the standard low-frequency local measurement interval, but do not continuously
+forward values to the dongle. Only the halves have a verified warning LED.
 
 The XIAO temporarily replaces its layer colour with this sequence:
 
 1. one white flash, then the left level;
 2. a short dark gap;
 3. two white flashes, then the right level;
-4. automatic return to the current layer colour.
+4. another dark gap;
+5. three white flashes, then the Pad level;
+6. automatic return to the current layer colour.
 
 Green means 51--100%, yellow 16--50%, red 0--15%, and two purple flashes mean
 that the value was unavailable or invalid. A 2.5-second timeout prevents an
 unresponsive half from blocking the feature.
 
 The current pairing has been observed as split source 0 = right, source 1 =
-left, and source 2 = Pad. v0.9.0 checks every source index before access and
-ignores source 2. If the XIAO settings are erased and all peripherals are
+left, and source 2 = Pad. v0.11.0 checks every source index before access and
+queries only those three slots. If the XIAO settings are erased and all peripherals are
 paired again in a different order, verify the mapping by powering one half off
-at a time before trusting the left/right labels.
+at a time before trusting the left/right/Pad labels.
 
-Only `nocfree_and_dongle.uf2` needs to be flashed for the first v0.9.1 test.
-Keep both halves on their already-tested v0.8.1 normal images. Because Studio
-stores keymap overrides in XIAO settings, run **Restore Stock Settings** once
-after flashing so both battery shortcuts and the direct-layer bindings receive
-the new stock settings.
+Flash the new `nocfree_and_pad_peripheral.uf2` and
+`nocfree_and_dongle.uf2`. Keep both halves on their already-tested v0.9.1
+images. Because the shortcut bindings are unchanged, Studio Restore Stock
+Settings is not normally required for this update.
 
 ## Dongle hardware assumed by v0.1
 
@@ -177,12 +178,12 @@ halves. v0.7.4 therefore uses the effective `3/2` full/output calibration ratio,
 which produces approximately 4.18--4.23 V. The reduced integers are calibration
 values, not a claim about the physical resistor values.
 
-Peripheral battery fetching remains disabled on the XIAO. The pinned ZMK
+Continuous peripheral battery fetching remains disabled on the XIAO. The pinned ZMK
 revision can turn an invalid peripheral lookup into source index 234 and then
 write outside its battery array. This is a dongle software/RAM safety issue,
 not an electrical measurement issue. A safe low-battery consumer will be added
-separately; Pad battery reporting also remains disabled until its exact factory
-firmware/hardware revision is confirmed.
+separately. Pad reporting was added only after two factory images and the
+v0.10 USB probe independently verified its ADC and divider circuit.
 
 ### Shared red LED probe in the v0.8 development stage
 

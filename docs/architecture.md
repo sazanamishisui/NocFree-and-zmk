@@ -163,12 +163,12 @@ geometry would be worse than none.
 | No DC/DC regulator mode | Requires external inductors this port cannot confirm are present. |
 | Default radio transmit power | Raising it is an unmeasured power and emissions change. |
 | No backlight, status-LED or mode-switch nodes | Their output pins or polarity remain unverified. |
-| Battery divider only on verified halves | Factory v2.4.5 confirms AIN2 plus the distinct left/right active-high enable pins. |
+| Battery divider only on verified devices | Factory images and USB probes confirm AIN2 plus each active-high enable pin. |
 | 100 kHz I2C | See above. |
 
 In addition to the I2C pins, the port drives only the verified battery-divider
-enable (`P0.05` left, `P0.31` right). Each is inactive at boot and between the
-once-per-minute battery samples.
+enable (`P0.05` left, `P0.31` right and Pad). Each is inactive at boot and
+between the low-frequency battery samples.
 
 ## Flash layout
 

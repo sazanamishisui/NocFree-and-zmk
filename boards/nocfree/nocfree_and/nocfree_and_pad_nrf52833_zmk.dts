@@ -5,12 +5,29 @@
  */
 
 #include "nocfree_and.dtsi"
+#include <zephyr/dt-bindings/gpio/gpio.h>
 
 / {
     chosen {
         /* The peripheral reports positions; Studio remains on the dongle. */
         /delete-property/ zmk,physical-layout;
         zmk,kscan = &kscan0;
+        zmk,battery = &vbatt;
+    };
+
+    /*
+     * Factory Pad firmware v2.1.0 and v2.2.1 both initialize Arduino D15 as
+     * the ADC input and D16 as the active-high divider control. Their compiled
+     * Pad pin table maps D15 to P0.04/AIN2 and D16 to P0.31. The USB-only
+     * v0.10 probe then measured 0 mV disabled, 2.804--2.817 V enabled, and
+     * 4.206--4.225 V with the verified 3:2 conversion.
+     */
+    vbatt: vbatt {
+        compatible = "zmk,battery-voltage-divider";
+        io-channels = <&adc 2>;
+        output-ohms = <2>;
+        full-ohms = <3>;
+        power-gpios = <&gpio0 31 GPIO_ACTIVE_HIGH>;
     };
 
     kscan0: kscan {
@@ -44,6 +61,10 @@
             /* 0, decimal */
             <&pca22 4>, <&pca22 5>;
     };
+};
+
+&adc {
+    status = "okay";
 };
 
 /*

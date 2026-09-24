@@ -424,6 +424,7 @@ class RoleTest(unittest.TestCase):
         expected = (
             (LEFT_DTS, 5),
             (RIGHT_DTS, 31),
+            (PAD_DTS, 31),
         )
         for path, enable_pin in expected:
             text = read(path)
@@ -439,9 +440,6 @@ class RoleTest(unittest.TestCase):
                 )
                 self.assertRegex(text, r"&adc\s*\{\s*status\s*=\s*\"okay\"")
 
-        self.assertNotIn("zmk,battery", read(PAD_DTS))
-        self.assertNotIn("vbatt", read(PAD_DTS))
-
         configs = {
             "left": (BOARD / "nocfree_and_left_nrf52833_zmk_defconfig").read_text(),
             "right": (BOARD / "nocfree_and_right_nrf52833_zmk_defconfig").read_text(),
@@ -449,7 +447,7 @@ class RoleTest(unittest.TestCase):
         }
         self.assertIn("CONFIG_ZMK_BATTERY_REPORTING=y", configs["left"])
         self.assertIn("CONFIG_ZMK_BATTERY_REPORTING=y", configs["right"])
-        self.assertIn("CONFIG_ZMK_BATTERY_REPORTING=n", configs["pad"])
+        self.assertIn("CONFIG_ZMK_BATTERY_REPORTING=y", configs["pad"])
 
     def test_shared_red_indicators_are_open_drain_and_pin_exact(self):
         expected = (

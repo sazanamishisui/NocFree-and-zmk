@@ -1,11 +1,11 @@
-# NocFree v0.9.0 on-demand battery status
+# NocFree v0.11.0 on-demand battery status with Pad
 
 ## Scope
 
-This change is dongle-only. It reads the standard Battery Level characteristic
-already exposed by the normal v0.8.1 left and right images. It does not enable
+This revision updates the Pad and dongle. It reads the standard Battery Level
+characteristic exposed by all three split peripherals. It does not enable
 `CONFIG_ZMK_SPLIT_BLE_CENTRAL_BATTERY_LEVEL_FETCHING`, subscribe to battery
-notifications, write either half, or alter the Pad.
+notifications, or write any peripheral.
 
 ## First build gate
 
@@ -14,26 +14,27 @@ Do not flash until **Validate sources**, **Firmware**, and
 GitHub Actions because the local workspace does not contain the complete
 ZMK/Zephyr toolchain.
 
-After the build passes, use only `nocfree_and_dongle.uf2` for the first test.
-Do not flash a settings-reset image and do not reflash either keyboard half.
+After the build passes, flash `nocfree_and_pad_peripheral.uf2`, then
+`nocfree_and_dongle.uf2`. Do not flash a settings-reset image and do not
+reflash either keyboard half.
 
 ## First test
 
-1. Flash `nocfree_and_dongle.uf2` to the XIAO.
-2. Open ZMK Studio and run **Restore Stock Settings** once. This is necessary
-   because the saved Studio keymap can otherwise retain the previous battery
-   shortcut and layer bindings.
-3. Confirm normal left/right/Pad typing and `Fn+U` / `Fn+1` output switching.
-4. Press `Fn+Enter` and observe:
+1. Flash the normal Pad image, then the normal dongle image.
+2. Confirm normal left/right/Pad typing and `Fn+U` / `Fn+1` output switching.
+3. Press `Fn+Enter` and observe:
    - one white flash, then the left battery colour;
    - two white flashes, then the right battery colour;
+   - three white flashes, then the Pad battery colour;
    - return to the current layer colour.
-5. Turn the left half off and press `Fn+Enter`. Left should show two purple
+4. Turn the left half off and press `Fn+Enter`. Left should show two purple
    flashes and right should still show a level colour.
-6. Restore the left half, turn the right half off, and press `Fn+V` using only
+5. Restore the left half, turn the right half off, and press `Fn+V` using only
    the left half. Left should show its level colour and right should show two
    purple flashes. This verifies the saved split-slot mapping and the
    left-only diagnostic path.
+6. Turn only the Pad off and request status. Its three-marker result should be
+   purple while both halves still show their level colours.
 7. With everything on, type quickly across both halves and the Pad immediately
    before, during, and after a battery request. There should be no stuck,
    repeated, or missing key.
@@ -48,12 +49,12 @@ Do not flash a settings-reset image and do not reflash either keyboard half.
 
 ## Risk and rollback
 
-The new code performs a BLE GATT one-byte read by characteristic UUID only when
-`Fn+Enter` or `Fn+V` is pressed. It never drives a keyboard-half GPIO and therefore adds
-no electrical or charging-circuit risk. The plausible failures are limited to
+The dongle performs a BLE GATT one-byte read by characteristic UUID only when
+`Fn+Enter` or `Fn+V` is pressed. The Pad uses only the independently verified
+P0.04/AIN2 input and briefly asserts P0.31 for each standard battery sample.
+The plausible failures are limited to
 wrong/unavailable indication, a short BLE transaction delay, or a software
 fault in the experimental dongle image.
 
-If typing becomes unstable, unplug the XIAO and flash the released v0.8.1-era
-dongle UF2. The left, right, and Pad images and their settings do not need to be
-changed.
+If typing becomes unstable, restore the released v0.9.1 dongle and Pad images.
+No settings-reset image is required.
