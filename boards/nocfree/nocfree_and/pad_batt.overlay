@@ -27,3 +27,9 @@
         status = "disabled";
     };
 };
+
+/* The Pad base board does not enable SAADC because normal battery reporting
+ * remains disabled. This diagnostic owns it explicitly for raw USB samples. */
+&adc {
+    status = "okay";
+};

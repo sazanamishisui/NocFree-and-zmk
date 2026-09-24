@@ -1,5 +1,16 @@
 # Pad battery ADC verification after v0.9.1
 
+## Hotfix 01
+
+- Explicitly enables the nRF52833 SAADC device only in the Pad's USB probe
+  overlay. The Pad base board correctly leaves SAADC disabled because normal
+  battery reporting is not enabled there; the first probe overlay selected
+  AIN2 but did not override that device status, causing an undeclared-device
+  compile error.
+- This is a build-configuration correction only. The selected P0.04/AIN2 and
+  P0.31 pins, polarity, sampling sequence, and normal Pad firmware are
+  unchanged.
+
 ## Diagnostic-only changes
 
 - Added `nocfree_and_pad_battery_adc_probe.uf2`, a standalone USB-logging

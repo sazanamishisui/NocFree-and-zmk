@@ -383,6 +383,9 @@ class SourceConfigurationTest(unittest.TestCase):
             "power-gpios = <&gpio0 31 GPIO_ACTIVE_HIGH>;", pad_overlay
         )
         self.assertIn('status = "disabled";', pad_overlay)
+        self.assertRegex(
+            pad_overlay, r"&adc\s*\{\s*status = \"okay\";\s*\};"
+        )
 
         workflow = WORKFLOW.read_text()
         self.assertIn("/tmp/ws/build/left_battery_adc_probe", workflow)
