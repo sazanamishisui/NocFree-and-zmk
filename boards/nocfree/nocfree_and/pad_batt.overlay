@@ -33,3 +33,9 @@
 &adc {
     status = "okay";
 };
+
+/* The normal Pad now has a verified battery node. Disable that production
+ * sensor in this raw probe so only battery_adc_probe.c owns AIN2 and P0.31. */
+&vbatt {
+    status = "disabled";
+};

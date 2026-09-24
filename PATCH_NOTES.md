@@ -1,5 +1,15 @@
 # v0.11.0 Pad battery reporting and three-device display
 
+## Hotfix 01
+
+- Disabled the normal Pad `vbatt` node only in the standalone raw ADC probe.
+  Once v0.11 added that node to the production Pad board, the diagnostic
+  overlay also needed to suppress it so the ZMK voltage-divider driver and
+  `battery_adc_probe.c` could not both own AIN2 and P0.31.
+- All normal left, right, Pad, and dongle images had already compiled. This
+  hotfix restores diagnostic-build isolation and fixes the built-artifact
+  assertion; it does not change production Pad or dongle behavior.
+
 ## Changes in v0.11.0
 
 - Added the verified Pad battery divider to its normal peripheral image:
