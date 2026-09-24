@@ -1,0 +1,29 @@
+/* SPDX-License-Identifier: MIT */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/*
+ * Factory Pad firmware v2.1.0 and v2.2.1 both initialize the battery helper
+ * with Arduino D15 as the ADC input and D16 as its active-high power control.
+ * Their compiled pin table maps D15 to P0.04/AIN2 and D16 to P0.31.
+ *
+ * Keep this node disabled so ZMK's normal battery driver cannot claim either
+ * resource. The standalone raw probe reads the metadata directly and is the
+ * only code that configures P0.31 in this diagnostic image.
+ */
+/ {
+    chosen {
+        zmk,battery = &pad_vbatt_probe;
+        zephyr,console = &cdc_acm_uart0;
+        zephyr,shell-uart = &cdc_acm_uart0;
+    };
+
+    pad_vbatt_probe: pad-vbatt-probe {
+        compatible = "zmk,battery-voltage-divider";
+        io-channels = <&adc 2>;
+        output-ohms = <2>;
+        full-ohms = <3>;
+        power-gpios = <&gpio0 31 GPIO_ACTIVE_HIGH>;
+        status = "disabled";
+    };
+};

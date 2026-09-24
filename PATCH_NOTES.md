@@ -1,3 +1,20 @@
+# Pad battery ADC verification after v0.9.1
+
+## Diagnostic-only changes
+
+- Added `nocfree_and_pad_battery_adc_probe.uf2`, a standalone USB-logging
+  image that compares P0.04/AIN2 with P0.31 inactive and active.
+- Derived those pins independently from both supplied factory Pad images,
+  v2.1.0 and v2.2.1: both initialize the battery helper as Arduino D15/D16,
+  and both compiled pin tables map those numbers to P0.04 and P0.31.
+- Kept the Pad's normal peripheral image unchanged: no BLE Battery Service,
+  periodic sampling, local warning LED, or dongle Pad display is enabled yet.
+- The probe owns the ADC and control GPIO only in its USB-only build, forces
+  the control inactive after every sample and error path, and leaves settings
+  intact.
+- Normal Pad battery support remains gated on an actual log showing the
+  expected low disabled voltage and plausible enabled divider voltage.
+
 # v0.9.1 stable battery display and direct-layer patch contents
 
 ## Changes in v0.9.1

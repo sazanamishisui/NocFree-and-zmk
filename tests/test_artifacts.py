@@ -49,6 +49,9 @@ BATTERY_ADC_PROBE_SOURCE = ROOT / "src" / "battery_adc_probe.c"
 BATTERY_DIAG_OVERLAY = (
     ROOT / "boards" / "nocfree" / "nocfree_and" / "battery_diag.overlay"
 )
+PAD_BATTERY_DIAG_OVERLAY = (
+    ROOT / "boards" / "nocfree" / "nocfree_and" / "pad_batt.overlay"
+)
 LED_PROBE_SOURCE = ROOT / "src" / "low_battery_led_probe.c"
 LOW_BATTERY_INDICATOR_SOURCE = ROOT / "src" / "low_battery_indicator.c"
 BATTERY_STATUS_SOURCE = ROOT / "src" / "battery_status.c"
@@ -78,6 +81,7 @@ class SourceConfigurationTest(unittest.TestCase):
             "nocfree_and_dongle",
             "nocfree_and_left_battery_adc_probe",
             "nocfree_and_right_battery_adc_probe",
+            "nocfree_and_pad_battery_adc_probe",
             "nocfree_and_left_low_battery_led_probe",
             "nocfree_and_right_low_battery_led_probe",
             "nocfree_and_left_settings_reset",
@@ -357,27 +361,36 @@ class SourceConfigurationTest(unittest.TestCase):
         self.assertIn("src/battery_adc_probe.c", cmake)
 
         matrix = BUILD_MATRIX.read_text()
-        for side in ("left", "right"):
+        for side in ("left", "right", "pad"):
             self.assertIn(
                 f"artifact-name: nocfree_and_{side}_battery_adc_probe", matrix
             )
         self.assertEqual(
-            matrix.count("CONFIG_NOCFREE_BATTERY_ADC_PROBE=y"), 2
+            matrix.count("CONFIG_NOCFREE_BATTERY_ADC_PROBE=y"), 3
         )
-        self.assertEqual(matrix.count("CONFIG_ZMK_BATTERY_REPORTING=n"), 4)
-        self.assertEqual(matrix.count("CONFIG_ADC=y"), 2)
+        self.assertEqual(matrix.count("CONFIG_ZMK_BATTERY_REPORTING=n"), 5)
+        self.assertEqual(matrix.count("CONFIG_ADC=y"), 3)
         self.assertNotIn("artifact-name: nocfree_and_dongle_battery_diagnostic", matrix)
         self.assertTrue(BATTERY_DIAG_OVERLAY.is_file())
         overlay = BATTERY_DIAG_OVERLAY.read_text()
         self.assertIn("zephyr,console = &cdc_acm_uart0", overlay)
         self.assertRegex(overlay, r"&vbatt\s*\{\s*status = \"disabled\";")
 
+        self.assertTrue(PAD_BATTERY_DIAG_OVERLAY.is_file())
+        pad_overlay = PAD_BATTERY_DIAG_OVERLAY.read_text()
+        self.assertIn("io-channels = <&adc 2>;", pad_overlay)
+        self.assertIn(
+            "power-gpios = <&gpio0 31 GPIO_ACTIVE_HIGH>;", pad_overlay
+        )
+        self.assertIn('status = "disabled";', pad_overlay)
+
         workflow = WORKFLOW.read_text()
         self.assertIn("/tmp/ws/build/left_battery_adc_probe", workflow)
         self.assertIn("/tmp/ws/build/right_battery_adc_probe", workflow)
+        self.assertIn("/tmp/ws/build/pad_battery_adc_probe", workflow)
         self.assertNotIn("/tmp/ws/build/dongle_battery_diagnostic", workflow)
         self.assertEqual(
-            workflow.count("CONFIG_NOCFREE_BATTERY_ADC_PROBE=y"), 2
+            workflow.count("CONFIG_NOCFREE_BATTERY_ADC_PROBE=y"), 3
         )
 
     def test_editable_studio_layers_and_direct_layer_keys_exist(self):
@@ -504,7 +517,7 @@ def diagnostic_available() -> bool:
 def battery_adc_probes_available() -> bool:
     return all(
         (role_dir(f"{side}_battery_adc_probe") / ".config").is_file()
-        for side in ("left", "right")
+        for side in ("left", "right", "pad")
     )
 
 
@@ -870,7 +883,11 @@ class ArtifactTest(unittest.TestCase):
     f"no complete battery ADC probe build output under {BUILD}",
 )
 class BatteryAdcProbeArtifactTest(unittest.TestCase):
-    ROLES = ("left_battery_adc_probe", "right_battery_adc_probe")
+    ROLES = (
+        "left_battery_adc_probe",
+        "right_battery_adc_probe",
+        "pad_battery_adc_probe",
+    )
 
     def test_probes_are_local_usb_only_measurements(self):
         for role in self.ROLES:

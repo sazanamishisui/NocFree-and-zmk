@@ -1,4 +1,4 @@
-# v0.7.3 battery ADC probe
+# Battery ADC probes
 
 ## Purpose
 
@@ -58,3 +58,26 @@ port, leave the power switch on, unplug USB for 60 seconds, then reconnect USB.
 The logging buffer should preserve the measurements taken while USB was absent.
 After testing, use the same COM port at 1200 baud and restore the matching
 normal peripheral image. A settings reset is not needed.
+
+## Pad verification stage after v0.9.1
+
+`nocfree_and_pad_battery_adc_probe.uf2` extends the same USB-only raw probe to
+the Pad, without enabling battery reporting in the normal Pad firmware.
+
+The pin choice is derived independently from both supplied factory images,
+`NocFree_and_V2.1.0_Pad.uf2` and `NocFree_and_V2.2.1_Pad.uf2`. In both images:
+
+- the battery helper is initialized with Arduino D15 as its analog input;
+- Arduino D16 is configured as the active-high divider control;
+- the compiled Pad pin table maps D15 to P0.04/AIN2 and D16 to P0.31.
+
+The diagnostic still requires a hardware confirmation before these pins are
+used by normal firmware. Flash only the Pad probe, open its USB COM port, and
+capture several `NOCFREE_ADC_PROBE` lines. The expected signature is an
+`off_pin_mv` near 0 V and an `on_pin_mv` near 2.7--2.8 V at high charge. Stop
+and restore `nocfree_and_pad_peripheral.uf2` if the Pad becomes warm, resets
+repeatedly, or the off/on readings do not differ substantially.
+
+After the log is captured, use the Pad COM port at 1200 baud and restore the
+normal Pad image. Do not use a settings-reset image; this test does not alter
+pairing data.

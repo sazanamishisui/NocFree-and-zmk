@@ -85,6 +85,24 @@ include:
       -DCONFIG_NOCFREE_BATTERY_ADC_PROBE=y
       -DEXTRA_DTC_OVERLAY_FILE=${GITHUB_WORKSPACE}/boards/nocfree/nocfree_and/battery_diag.overlay
 
+  # Pad battery probe. Factory Pad v2.1.0 and v2.2.1 independently identify
+  # Arduino D15 -> P0.04/AIN2 and D16 -> P0.31. Keep this USB-only until the
+  # divider's off/on voltages are confirmed on the user's hardware.
+  - board: nocfree_and_pad/nrf52833/zmk
+    artifact-name: nocfree_and_pad_battery_adc_probe
+    cmake-args: >-
+      -DCONFIG_ZMK_SPLIT=n
+      -DCONFIG_ZMK_BLE=n
+      -DCONFIG_ZMK_USB=y
+      -DCONFIG_ZMK_BATTERY_REPORTING=n
+      -DCONFIG_ADC=y
+      -DCONFIG_USB_DEVICE_INITIALIZE_AT_BOOT=n
+      -DCONFIG_ZMK_USB_LOGGING=y
+      -DCONFIG_ZMK_LOGGING_MINIMAL=y
+      -DCONFIG_NOCFREE_BATTERY_ADC_PROBE=y
+      -DEXTRA_DTC_OVERLAY_FILE=${GITHUB_WORKSPACE}/boards/nocfree/nocfree_and/pad_batt.overlay
+      -DKEYMAP_FILE=${GITHUB_WORKSPACE}/boards/nocfree/nocfree_and/pad_usb_diag.keymap
+
   # Temporary LED-pin validation images. The shared charge/low-battery line is
   # released while VBUS exists and alternates low/released after USB removal.
   - board: nocfree_and_left/nrf52833/zmk
