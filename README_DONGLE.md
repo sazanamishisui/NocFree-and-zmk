@@ -20,10 +20,12 @@ NocFree Pad   nRF52833 -- BLE peripheral --/
 The NocFree halves continue to use their existing PCA9555 scanner and ZMK
 debounce settings. No ESB/nRF24L01 path is used.
 
-## On-demand battery display in v0.9.0
+## On-demand battery display in v0.9.1
 
-Press `Fn+Enter` to make the XIAO read the two keyboard halves' standard BLE
-Battery Level characteristics. This is an on-demand GATT read: the unsafe
+Press `Fn+Enter` or `Fn+V` to make the XIAO read the two keyboard halves'
+standard BLE Battery Level characteristics. `Fn+Enter` is convenient in normal
+use; `Fn+V` is entirely on the left half and remains available while the right
+half is off. This is an on-demand GATT read: the unsafe
 continuous split-central battery-fetch option remains disabled. The halves
 continue their existing once-per-minute local measurements for their own
 low-battery warning, but do not continuously forward values to the dongle.
@@ -45,10 +47,11 @@ ignores source 2. If the XIAO settings are erased and all peripherals are
 paired again in a different order, verify the mapping by powering one half off
 at a time before trusting the left/right labels.
 
-Only `nocfree_and_dongle.uf2` needs to be flashed for the first v0.9.0 test.
+Only `nocfree_and_dongle.uf2` needs to be flashed for the first v0.9.1 test.
 Keep both halves on their already-tested v0.8.1 normal images. Because Studio
 stores keymap overrides in XIAO settings, run **Restore Stock Settings** once
-after flashing so `Fn+Enter` receives the new `Battery Status` binding.
+after flashing so both battery shortcuts and the direct-layer bindings receive
+the new stock settings.
 
 ## Dongle hardware assumed by v0.1
 
@@ -123,16 +126,16 @@ explicit recovery and cancellation path.
 
 ZMK Studio exposes three initially transparent layers for user editing:
 
-- `Fn+N`: toggle the Nav layer
-- `Fn+M`: toggle the Numpad layer
-- `Fn+W`: toggle the Work layer
+- `Fn+N`: move directly to the Nav layer
+- `Fn+M`: move directly to the Numpad layer
+- `Fn+W`: move directly to the Work layer
 
-Press the same chord again to return to Base. Because these are toggle layers,
-verify the active layer before typing sensitive text. Press `Esc` on any of the
-three editable layers for an emergency return to Base. Keep each layer's `Esc`
-binding unchanged while experimenting in Studio. `Fn+1` through `Fn+5` and
-`Fn+U` remain reserved for host-output selection and should not be moved in
-Studio while the v0.3.3 position-event output router is in use.
+These are `To Layer` bindings, so selecting a destination clears the other
+non-default layer states. Press `Esc` on any of the three editable layers to
+return to Base. Keep each layer's `Esc` binding unchanged while experimenting
+in Studio. `Fn+1` through `Fn+5` and `Fn+U` remain reserved for host-output
+selection and should not be moved in Studio while the v0.3.3 position-event
+output router is in use.
 
 The dongle build explicitly supplies this shield keymap through CMake's
 `KEYMAP_FILE`. This prevents the original two-layer NocFree config keymap from

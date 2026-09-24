@@ -73,14 +73,14 @@
                 &trans &bt BT_SEL 0 &bt BT_SEL 1 &bt BT_SEL 2 &bt BT_SEL 3 &bt BT_SEL 4 &studio_unlock
                 &trans &trans &trans &bt BT_CLR &trans &trans &trans &trans
                 /* QWERTY row */
-                &trans &trans &tog 4 &trans &trans &trans
+                &trans &trans &to 4 &trans &trans &trans
                 &trans &out OUT_USB &trans &trans &trans &trans &trans &bootloader_hold 0 0
                 /* Home row */
                 &trans &trans &trans &trans &trans &trans
                 &trans &trans &trans &trans &trans &trans &trans &battery_status
                 /* Shift row */
-                &trans &trans &trans &trans &trans &trans
-                &tog 2 &tog 3 &trans &trans &trans &trans &trans &trans
+                &trans &trans &trans &trans &battery_status &trans
+                &to 2 &to 3 &trans &trans &trans &trans &trans &trans
                 /* Bottom row */
                 &trans &trans &trans &trans &trans
                 &trans &trans &trans &trans &trans &trans &trans &trans

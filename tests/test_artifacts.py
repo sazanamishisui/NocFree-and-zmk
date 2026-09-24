@@ -380,7 +380,7 @@ class SourceConfigurationTest(unittest.TestCase):
             workflow.count("CONFIG_NOCFREE_BATTERY_ADC_PROBE=y"), 2
         )
 
-    def test_editable_studio_layers_and_toggle_keys_exist(self):
+    def test_editable_studio_layers_and_direct_layer_keys_exist(self):
         text = KEYMAP.read_text()
         for layer in ("navigation_layer", "numpad_layer", "work_layer"):
             with self.subTest(layer=layer):
@@ -391,9 +391,26 @@ class SourceConfigurationTest(unittest.TestCase):
         reserved = re.search(r"reserved_layer\s*\{(.*?)\n\s*\};", text, re.S)
         self.assertIsNotNone(reserved)
         self.assertIn('status = "reserved";', reserved.group(1))
-        self.assertIn("&trans &trans &tog 4 &trans &trans &trans", text)
-        self.assertIn("&tog 2 &tog 3 &trans &trans", text)
+        self.assertIn("&trans &trans &to 4 &trans &trans &trans", text)
+        self.assertIn("&to 2 &to 3 &trans &trans", text)
+        self.assertNotRegex(text, r"&tog\s+[234]")
         self.assertGreaterEqual(text.count("&to 0 &trans"), 3)
+
+    def test_battery_status_has_right_and_left_side_shortcuts(self):
+        text = KEYMAP.read_text()
+        function = re.search(
+            r"function_layer\s*\{(.*?)\n\s*\};", text, re.S
+        )
+        self.assertIsNotNone(function)
+        self.assertEqual(function.group(1).count("&battery_status"), 2)
+        self.assertIn(
+            "&trans &trans &trans &trans &trans &trans &trans &battery_status",
+            function.group(1),
+        )
+        self.assertIn(
+            "&trans &trans &trans &trans &battery_status &trans",
+            function.group(1),
+        )
 
     def test_dongle_build_explicitly_selects_its_keymap(self):
         expected = (

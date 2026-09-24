@@ -1,3 +1,20 @@
+# v0.9.1 stable battery display and direct-layer patch contents
+
+## Changes in v0.9.1
+
+- Kept the convenient `Fn+Enter` battery-status shortcut and added `Fn+V` as
+  a left-half-only fallback. Battery status can therefore still be requested
+  while the right half, which contains Enter, is powered off or disconnected.
+- Changed `Fn+N`, `Fn+M`, and `Fn+W` from Toggle Layer to To Layer for Nav,
+  Numpad, and Work respectively. Selecting one destination now clears the
+  other non-default layers instead of allowing layer states to accumulate.
+- Kept `Esc` on Nav, Numpad, and Work as `To Layer 0`, providing a consistent
+  return to Base.
+- Added source tests requiring both battery shortcuts, all three direct-layer
+  bindings, and the absence of Toggle Layer bindings for layers 2--4.
+- No radio, battery-measurement, scanner, debounce, Pad, sleep, pairing, or
+  USB/Bluetooth-output code changed from v0.9.0.
+
 # v0.9.0 on-demand dongle battery display patch contents
 
 ## Changes in v0.9.0

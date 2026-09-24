@@ -21,7 +21,8 @@ Do not flash a settings-reset image and do not reflash either keyboard half.
 
 1. Flash `nocfree_and_dongle.uf2` to the XIAO.
 2. Open ZMK Studio and run **Restore Stock Settings** once. This is necessary
-   because the saved Studio keymap can otherwise leave `Fn+Enter` transparent.
+   because the saved Studio keymap can otherwise retain the previous battery
+   shortcut and layer bindings.
 3. Confirm normal left/right/Pad typing and `Fn+U` / `Fn+1` output switching.
 4. Press `Fn+Enter` and observe:
    - one white flash, then the left battery colour;
@@ -29,8 +30,10 @@ Do not flash a settings-reset image and do not reflash either keyboard half.
    - return to the current layer colour.
 5. Turn the left half off and press `Fn+Enter`. Left should show two purple
    flashes and right should still show a level colour.
-6. Restore left, then repeat with only the right half off. This verifies the
-   saved split-slot mapping as well as the unavailable-data path.
+6. Restore the left half, turn the right half off, and press `Fn+V` using only
+   the left half. Left should show its level colour and right should show two
+   purple flashes. This verifies the saved split-slot mapping and the
+   left-only diagnostic path.
 7. With everything on, type quickly across both halves and the Pad immediately
    before, during, and after a battery request. There should be no stuck,
    repeated, or missing key.
@@ -46,7 +49,7 @@ Do not flash a settings-reset image and do not reflash either keyboard half.
 ## Risk and rollback
 
 The new code performs a BLE GATT one-byte read by characteristic UUID only when
-`Fn+Enter` is pressed. It never drives a keyboard-half GPIO and therefore adds
+`Fn+Enter` or `Fn+V` is pressed. It never drives a keyboard-half GPIO and therefore adds
 no electrical or charging-circuit risk. The plausible failures are limited to
 wrong/unavailable indication, a short BLE transaction delay, or a software
 fault in the experimental dongle image.
